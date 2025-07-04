@@ -1,0 +1,27 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Función para verificar si el usuario es administrador
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    // Reglas para la colección de restaurantes
+    match /restaurants/{restaurantId} {
+      // Permitir lectura pública
+      allow read: if true;
+      
+      // Permitir escritura solo a administradores
+      allow create, update, delete: if isAdmin();
+      
+      // Reglas para la subcolección de platos
+      match /dishes/{dishId} {
+        // Permitir lectura pública
+        allow read: if true;
+        
+        // Permitir escritura solo a administradores
+        allow create, update, delete: if isAdmin();
+      }
+    }
+  }
+}
