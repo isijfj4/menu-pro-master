@@ -65,18 +65,11 @@ export default function AdminRestaurantForm({
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    if (!restaurant?.id) {
-      // For new restaurants, we'll upload the image after creating the restaurant
-      // So we just return a temporary URL for preview
-      const tempUrl = URL.createObjectURL(file);
-      setValue('coverImg', tempUrl);
-      return tempUrl;
-    }
-
-    // For existing restaurants, upload the image immediately
-    const imageUrl = await uploadRestaurantCoverImage(restaurant.id, file);
-    setValue('coverImg', imageUrl);
-    return imageUrl;
+    // Always return a temporary URL for preview in the UI
+    // The actual upload will happen during form submission
+    const tempUrl = URL.createObjectURL(file);
+    setValue('coverImg', tempUrl);
+    return tempUrl;
   };
 
   const handleImageRemove = () => {
@@ -90,23 +83,40 @@ export default function AdminRestaurantForm({
       // Include categories from state
       data.categories = categories;
       
+      // Handle blob URL for cover image before saving to database
+      let finalData = { ...data };
+      let imageToUpload: File | null = null;
+      
+      // Check if we have a blob URL that needs to be processed
+      if (data.coverImg && data.coverImg.startsWith('blob:')) {
+        // Store the blob for later upload, but don't include it in the data to save
+        const response = await fetch(data.coverImg);
+        const blob = await response.blob();
+        imageToUpload = new File([blob], 'cover.jpg', { type: 'image/jpeg' });
+        
+        // Remove the temporary URL from the data to be saved
+        finalData.coverImg = '';
+      }
+      
       if (restaurant) {
-        // Update existing restaurant
-        await updateRestaurant(restaurant.id!, data);
+        // For existing restaurant
+        if (imageToUpload) {
+          // Upload the image first to get the real URL
+          const imageUrl = await uploadRestaurantCoverImage(restaurant.id!, imageToUpload);
+          finalData.coverImg = imageUrl;
+        }
+        
+        // Update with all data including the real image URL if applicable
+        await updateRestaurant(restaurant.id!, finalData);
         toast.success('Restaurante actualizado con éxito');
       } else {
-        // Create new restaurant
-        const restaurantId = await createRestaurant(data);
+        // For new restaurant
+        // First create with all data except possibly the image
+        const restaurantId = await createRestaurant(finalData);
         
-        // If we have a cover image that's a blob URL (temporary), upload it now
-        if (data.coverImg && data.coverImg.startsWith('blob:')) {
-          const response = await fetch(data.coverImg);
-          const blob = await response.blob();
-          const file = new File([blob], 'cover.jpg', { type: 'image/jpeg' });
-          
-          const imageUrl = await uploadRestaurantCoverImage(restaurantId, file);
-          
-          // Update the restaurant with the real image URL
+        // If we have an image to upload, do it now and update the restaurant
+        if (imageToUpload) {
+          const imageUrl = await uploadRestaurantCoverImage(restaurantId, imageToUpload);
           await updateRestaurant(restaurantId, { coverImg: imageUrl });
         }
         

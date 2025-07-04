@@ -76,18 +76,11 @@ export default function AdminDishForm({
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    if (!dish?.id) {
-      // For new dishes, we'll upload the image after creating the dish
-      // So we just return a temporary URL for preview
-      const tempUrl = URL.createObjectURL(file);
-      setPhotos([...photos, tempUrl]);
-      return tempUrl;
-    }
-
-    // For existing dishes, upload the image immediately
-    const imageUrl = await uploadDishImage(restaurantId, dish.id, file);
-    setPhotos([...photos, imageUrl]);
-    return imageUrl;
+    // Always return a temporary URL for preview in the UI
+    // The actual upload will happen during form submission
+    const tempUrl = URL.createObjectURL(file);
+    setPhotos([...photos, tempUrl]);
+    return tempUrl;
   };
 
   const handleRemoveImage = (url: string) => {
@@ -98,42 +91,57 @@ export default function AdminDishForm({
     try {
       setIsSubmitting(true);
       
-      // Include allergens and photos from state
+      // Include allergens from state
       data.allergens = allergens;
-      data.photos = photos;
       
       // Convert price from decimal to cents
       data.price = Math.round(Number(data.price) * 100);
       
+      // Process photos - separate blob URLs from real URLs
+      const blobUrls = photos.filter(url => url.startsWith('blob:'));
+      const realUrls = photos.filter(url => !url.startsWith('blob:'));
+      
+      // Prepare files to upload from blob URLs
+      const filesToUpload: File[] = [];
+      for (let i = 0; i < blobUrls.length; i++) {
+        const blobUrl = blobUrls[i];
+        const response = await fetch(blobUrl);
+        const blob = await response.blob();
+        filesToUpload.push(new File([blob], `photo-${i}.jpg`, { type: 'image/jpeg' }));
+      }
+      
+      // Create a copy of data with only real URLs for photos
+      const finalData = { ...data, photos: realUrls };
+      
       if (dish) {
-        // Update existing dish
-        await updateDish(restaurantId, dish.id!, data);
+        // For existing dish
+        let updatedPhotos = [...realUrls];
+        
+        // Upload any new photos first to get real URLs
+        for (let i = 0; i < filesToUpload.length; i++) {
+          const imageUrl = await uploadDishImage(restaurantId, dish.id!, filesToUpload[i]);
+          updatedPhotos.push(imageUrl);
+        }
+        
+        // Update with all data including real image URLs
+        finalData.photos = updatedPhotos;
+        await updateDish(restaurantId, dish.id!, finalData);
         toast.success('Plato actualizado con éxito');
       } else {
-        // Create new dish
-        const dishId = await createDish(restaurantId, data);
+        // For new dish - first create with real URLs only
+        const dishId = await createDish(restaurantId, finalData);
         
-        // If we have photos that are blob URLs (temporary), upload them now
-        const blobUrls = photos.filter(url => url.startsWith('blob:'));
-        if (blobUrls.length > 0) {
-          const newPhotos = [...photos];
+        // If we have files to upload, do it now
+        if (filesToUpload.length > 0) {
+          const newPhotos = [...realUrls];
           
-          for (let i = 0; i < blobUrls.length; i++) {
-            const blobUrl = blobUrls[i];
-            const response = await fetch(blobUrl);
-            const blob = await response.blob();
-            const file = new File([blob], `photo-${i}.jpg`, { type: 'image/jpeg' });
-            
-            const imageUrl = await uploadDishImage(restaurantId, dishId, file);
-            
-            // Replace the blob URL with the real URL
-            const index = newPhotos.indexOf(blobUrl);
-            if (index !== -1) {
-              newPhotos[index] = imageUrl;
-            }
+          // Upload each file and collect real URLs
+          for (let i = 0; i < filesToUpload.length; i++) {
+            const imageUrl = await uploadDishImage(restaurantId, dishId, filesToUpload[i]);
+            newPhotos.push(imageUrl);
           }
           
-          // Update the dish with the real image URLs
+          // Update the dish with all real image URLs
           await updateDish(restaurantId, dishId, { photos: newPhotos });
         }
         
