@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Home, Settings, LogOut, User } from 'lucide-react';
+import { Settings, LogOut, User } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -33,15 +33,6 @@ export default function Header() {
           </Link>
         </div>
         <nav className="flex items-center gap-4">
-          <Link 
-            href="/" 
-            className="flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary"
-            aria-label="Inicio"
-          >
-            <Home className="h-4 w-4" />
-            <span>Inicio</span>
-          </Link>
-          
           {user ? (
             <>
               <Link 
@@ -67,16 +58,7 @@ export default function Header() {
                 <span>Salir</span>
               </button>
             </>
-          ) : (
-            <Link 
-              href="/login" 
-              className="flex items-center gap-1 text-sm font-medium transition-colors hover:text-primary"
-              aria-label="Iniciar sesión"
-            >
-              <User className="h-4 w-4" />
-              <span>Iniciar Sesión</span>
-            </Link>
-          )}
+          ) : null}
         </nav>
       </div>
     </header>

@@ -30,6 +30,7 @@ interface DataTableProps<T> {
   onEdit?: (item: T) => void;
   onDelete?: (item: T) => void;
   onAdd?: () => void;
+  onRowClick?: (item: T) => void;
   addButtonLabel?: string;
   isLoading?: boolean;
 }
@@ -40,6 +41,7 @@ export default function DataTable<T extends { id?: string }>({
   onEdit,
   onDelete,
   onAdd,
+  onRowClick,
   addButtonLabel = 'Añadir',
   isLoading = false
 }: DataTableProps<T>) {
@@ -107,7 +109,11 @@ export default function DataTable<T extends { id?: string }>({
               </TableRow>
             ) : (
               data.map((item) => (
-                <TableRow key={item.id}>
+                <TableRow 
+                  key={item.id}
+                  className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
+                  onClick={() => onRowClick?.(item)}
+                >
                   {columns.map((column) => (
                     <TableCell key={column.accessorKey as string}>
                       {column.cell 
@@ -116,7 +122,7 @@ export default function DataTable<T extends { id?: string }>({
                     </TableCell>
                   ))}
                   {(onEdit || onDelete) && (
-                    <TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button 

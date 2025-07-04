@@ -8,17 +8,21 @@ import { getAllDishes, deleteDish } from '@/lib/db/dishes';
 import DataTable from '@/components/DataTable';
 import AdminRestaurantForm from '@/components/AdminRestaurantForm';
 import AdminDishForm from '@/components/AdminDishForm';
+import DishesModal from '@/components/DishesModal';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import toast from 'react-hot-toast';
 
 export default function AdminPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [restaurantForEdit, setRestaurantForEdit] = useState<Restaurant | null>(null);
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRestaurantFormOpen, setIsRestaurantFormOpen] = useState(false);
   const [isDishFormOpen, setIsDishFormOpen] = useState(false);
+  const [isDishesModalOpen, setIsDishesModalOpen] = useState(false);
+  const [restaurantForModal, setRestaurantForModal] = useState<Restaurant | null>(null);
 
   // Fetch restaurants on mount
   useEffect(() => {
@@ -64,12 +68,12 @@ export default function AdminPage() {
 
   // Handle restaurant actions
   const handleAddRestaurant = () => {
-    setSelectedRestaurant(null);
+    setRestaurantForEdit(null);
     setIsRestaurantFormOpen(true);
   };
 
   const handleEditRestaurant = (restaurant: Restaurant) => {
-    setSelectedRestaurant(restaurant);
+    setRestaurantForEdit(restaurant);
     setIsRestaurantFormOpen(true);
   };
 
@@ -121,6 +125,17 @@ export default function AdminPage() {
     if (selectedRestaurant) {
       fetchDishes(selectedRestaurant.id!);
     }
+  };
+
+  // Handle restaurant row click to show dishes modal
+  const handleRestaurantRowClick = (restaurant: Restaurant) => {
+    setRestaurantForModal(restaurant);
+    setIsDishesModalOpen(true);
+  };
+
+  const handleCloseDishesModal = () => {
+    setIsDishesModalOpen(false);
+    setRestaurantForModal(null);
   };
 
   // Restaurant columns for DataTable
@@ -189,13 +204,19 @@ export default function AdminPage() {
         
         {/* Restaurants Table */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Restaurantes</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold">Restaurantes</h2>
+            <p className="text-sm text-muted-foreground">
+              💡 Haz click en una fila para ver los platos del restaurante
+            </p>
+          </div>
           <DataTable
             data={restaurants}
             columns={restaurantColumns}
             onAdd={handleAddRestaurant}
             onEdit={handleEditRestaurant}
             onDelete={handleDeleteRestaurant}
+            onRowClick={handleRestaurantRowClick}
             addButtonLabel="Añadir Restaurante"
             isLoading={isLoading}
           />
@@ -233,10 +254,10 @@ export default function AdminPage() {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-card rounded-2xl overflow-hidden max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
               <h2 className="text-xl font-bold mb-4">
-                {selectedRestaurant ? 'Editar Restaurante' : 'Nuevo Restaurante'}
+                {restaurantForEdit ? 'Editar Restaurante' : 'Nuevo Restaurante'}
               </h2>
               <AdminRestaurantForm
-                restaurant={selectedRestaurant || undefined}
+                restaurant={restaurantForEdit || undefined}
                 onSuccess={handleRestaurantFormSuccess}
                 onCancel={() => setIsRestaurantFormOpen(false)}
               />
@@ -260,6 +281,15 @@ export default function AdminPage() {
               />
             </div>
           </div>
+        )}
+
+        {/* Dishes Modal */}
+        {isDishesModalOpen && restaurantForModal && (
+          <DishesModal
+            restaurant={restaurantForModal}
+            isOpen={isDishesModalOpen}
+            onClose={handleCloseDishesModal}
+          />
         )}
       </div>
     </ProtectedRoute>

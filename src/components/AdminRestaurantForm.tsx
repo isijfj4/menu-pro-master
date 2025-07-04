@@ -36,7 +36,7 @@ export default function AdminRestaurantForm({
   );
   const [newCategory, setNewCategory] = useState('');
 
-  const { register, handleSubmit, formState: { errors } } = useForm<CreateRestaurantData>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<CreateRestaurantData>({
     defaultValues: restaurant || {
       name: '',
       type: 'otro',
@@ -50,6 +50,8 @@ export default function AdminRestaurantForm({
       rating: 5
     }
   });
+
+  const coverImg = watch('coverImg');
 
   const handleAddCategory = () => {
     if (newCategory.trim() && !categories.includes(newCategory.trim())) {
@@ -66,12 +68,19 @@ export default function AdminRestaurantForm({
     if (!restaurant?.id) {
       // For new restaurants, we'll upload the image after creating the restaurant
       // So we just return a temporary URL for preview
-      return URL.createObjectURL(file);
+      const tempUrl = URL.createObjectURL(file);
+      setValue('coverImg', tempUrl);
+      return tempUrl;
     }
 
     // For existing restaurants, upload the image immediately
     const imageUrl = await uploadRestaurantCoverImage(restaurant.id, file);
+    setValue('coverImg', imageUrl);
     return imageUrl;
+  };
+
+  const handleImageRemove = () => {
+    setValue('coverImg', '');
   };
 
   const onSubmit = async (data: CreateRestaurantData) => {
@@ -254,8 +263,8 @@ export default function AdminRestaurantForm({
           </label>
           <ImageUploader
             onImageUpload={handleImageUpload}
-            currentImageUrl={restaurant?.coverImg}
-            onImageRemove={() => {}}
+            currentImageUrl={coverImg || restaurant?.coverImg}
+            onImageRemove={handleImageRemove}
             aspectRatio="video"
           />
         </div>
