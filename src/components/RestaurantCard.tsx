@@ -25,21 +25,22 @@ interface RestaurantCardProps {
 export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCardProps) {
   const { id, name, type, rating, coverImg } = restaurant;
 
-  // Generate stars based on rating
+  // Generate stars based on rating including partial values
   const numericRating = typeof rating === 'number' ? rating : 0;
-  const stars = Array(5).fill(0).map((_, i) => (
-    <Star
-      key={i}
-      className={cn(
-        "h-4 w-4",
-        i < Math.floor(numericRating) 
-          ? "text-yellow-500 fill-yellow-500" 
-          : i < numericRating 
-            ? "text-yellow-500 fill-yellow-500/50" 
-            : "text-muted-foreground"
-      )}
-    />
-  ));
+  const stars = Array(5).fill(0).map((_, i) => {
+    const fillPercent = Math.max(Math.min(numericRating - i, 1), 0) * 100;
+    return (
+      <span key={i} className="relative inline-block">
+        <Star className="h-4 w-4 text-muted-foreground" />
+        {fillPercent > 0 && (
+          <Star
+            className="h-4 w-4 text-yellow-500 fill-yellow-500 absolute left-0 top-0"
+            style={{ clipPath: `inset(0 ${100 - fillPercent}% 0 0)` }}
+          />
+        )}
+      </span>
+    );
+  });
 
   return (
     <motion.div

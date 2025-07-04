@@ -25,6 +25,7 @@ interface AdminRestaurantFormProps {
   onCancel: () => void;
 }
 
+
 export default function AdminRestaurantForm({
   restaurant,
   onSuccess,
@@ -255,10 +256,11 @@ export default function AdminRestaurantForm({
             max="5"
             step="0.1"
             className="w-full rounded-lg border border-input bg-background px-3 py-2"
-            {...register('rating', { 
+            {...register('rating', {
               required: 'La calificación es obligatoria',
               min: { value: 1, message: 'La calificación mínima es 1' },
-              max: { value: 5, message: 'La calificación máxima es 5' }
+              max: { value: 5, message: 'La calificación máxima es 5' },
+              valueAsNumber: true
             })}
           />
           {errors.rating && (
@@ -301,3 +303,5 @@ export default function AdminRestaurantForm({
     </form>
   );
 }
+
+
