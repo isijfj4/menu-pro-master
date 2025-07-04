@@ -159,7 +159,7 @@ export default function AdminPage() {
       cell: (restaurant: Restaurant) => (
         <div className="flex items-center">
           <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-          <span>{restaurant.rating.toFixed(1)}</span>
+          <span>{typeof restaurant.rating === 'number' ? restaurant.rating.toFixed(1) : restaurant.rating}</span>
         </div>
       ),
     },
@@ -289,6 +289,11 @@ export default function AdminPage() {
             restaurant={restaurantForModal}
             isOpen={isDishesModalOpen}
             onClose={handleCloseDishesModal}
+            onDishesUpdated={async () => {
+              if (selectedRestaurant && selectedRestaurant.id && selectedRestaurant.id === restaurantForModal.id) {
+                await fetchDishes(selectedRestaurant.id);
+              }
+            }}
           />
         )}
       </div>

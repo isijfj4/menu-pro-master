@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { X, Star, Camera, Plus, Edit, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Star, Camera, Plus, Edit, Trash2, Save } from 'lucide-react';
 import { Restaurant, Dish } from '@/lib/types';
 import { getAllDishes, deleteDish } from '@/lib/db/dishes';
 import { Button } from '@/components/ui/button';
@@ -12,17 +12,21 @@ interface DishesModalProps {
   restaurant: Restaurant;
   isOpen: boolean;
   onClose: () => void;
+  onDishesUpdated?: () => Promise<void>;
 }
 
-export default function DishesModal({ restaurant, isOpen, onClose }: DishesModalProps) {
+export default function DishesModal({ restaurant, isOpen, onClose, onDishesUpdated }: DishesModalProps) {
   const [dishes, setDishes] = useState<Dish[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isDishFormOpen, setIsDishFormOpen] = useState(false);
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
+  const formContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen && restaurant.id) {
+      console.log('DishesModal - Restaurant categories:', restaurant.categories);
       fetchDishes();
     }
   }, [isOpen, restaurant.id]);
@@ -60,7 +64,12 @@ export default function DishesModal({ restaurant, isOpen, onClose }: DishesModal
       try {
         await deleteDish(restaurant.id, dish.id!);
         toast.success('Plato eliminado con éxito');
-        fetchDishes();
+        await fetchDishes();
+        
+        // Notify parent component that dishes have been updated
+        if (onDishesUpdated) {
+          await onDishesUpdated();
+        }
       } catch (error) {
         console.error('Error deleting dish:', error);
         toast.error('Error al eliminar el plato');
@@ -68,22 +77,49 @@ export default function DishesModal({ restaurant, isOpen, onClose }: DishesModal
     }
   };
 
-  const handleDishFormSuccess = () => {
+  const handleDishFormSuccess = async () => {
+    setIsSubmitting(false);
     setIsDishFormOpen(false);
     setSelectedDish(null);
-    fetchDishes();
+    await fetchDishes();
+    
+    // Notify parent component that dishes have been updated
+    if (onDishesUpdated) {
+      await onDishesUpdated();
+    }
   };
 
   const handleDishFormCancel = () => {
     setIsDishFormOpen(false);
     setSelectedDish(null);
   };
+  
+  const handleFormSubmit = () => {
+    setIsSubmitting(true);
+    if (formContainerRef.current) {
+      // Trigger form submission
+      const form = formContainerRef.current.querySelector('form');
+      if (form) {
+        const submitButton = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+        if (submitButton) {
+          submitButton.click();
+        }
+      }
+    }
+  };
 
   const filteredDishes = selectedCategory === 'all' 
     ? dishes 
-    : dishes.filter(dish => dish.category === selectedCategory);
+    : dishes.filter(dish => dish.category.toLowerCase() === selectedCategory.toLowerCase());
 
-  const categories = ['all', ...Array.from(new Set(dishes.map(dish => dish.category)))];
+  // Use restaurant categories instead of deriving from dishes
+  // This ensures all categories are shown even if there are no dishes in some categories
+  const categories = ['all', ...restaurant.categories];
+  
+  console.log('Restaurant categories in modal:', restaurant.categories);
+  console.log('Categories used in filter:', categories);
+  console.log('Selected category:', selectedCategory);
+  console.log('Filtered dishes:', filteredDishes);
 
   if (!isOpen) return null;
 
@@ -92,7 +128,7 @@ export default function DishesModal({ restaurant, isOpen, onClose }: DishesModal
       <div className="bg-black text-white border-neutral-600 border-1 rounded-2xl overflow-hidden max-w-4xl w-full max-h-[90vh] 
       flex flex-col">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-6 border-b border-neutral-600 flex items-center justify-between">
           <div className="flex items-center">
             {isDishFormOpen && (
               <Button
@@ -120,7 +156,7 @@ export default function DishesModal({ restaurant, isOpen, onClose }: DishesModal
                   </span>
                   <div className="flex items-center">
                     <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-                    <span>{restaurant.rating.toFixed(1)}</span>
+                    <span>{typeof restaurant.rating === 'number' ? restaurant.rating.toFixed(1) : '0.0'}</span>
                   </div>
                   <span className="mx-2">•</span>
                   <span>{restaurant.location.city}</span>
@@ -128,28 +164,44 @@ export default function DishesModal({ restaurant, isOpen, onClose }: DishesModal
               )}
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {isDishFormOpen && (
+              <Button
+                onClick={handleFormSubmit}
+                disabled={isSubmitting}
+                className="flex items-center gap-1"
+              >
+                {isSubmitting ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-neutral-600"></div>
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
+                {isSubmitting ? 'Guardando...' : selectedDish ? 'Actualizar' : 'Crear'}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         {!isDishFormOpen && (
           <>
             {/* Category Filter and Add Button */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-3">
+            <div className="p-4 border-b border-neutral-600 justify-center items-center">
+              <div className="flex items-center justify-between ">
                 <div className="flex flex-wrap gap-2">
                   {categories.map((category) => (
                     <button
                       key={category}
                       onClick={() => setSelectedCategory(category)}
                       className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                        selectedCategory === category
+                        selectedCategory.toLowerCase() === category.toLowerCase()
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
@@ -191,7 +243,7 @@ export default function DishesModal({ restaurant, isOpen, onClose }: DishesModal
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {filteredDishes.map((dish) => (
-                    <div key={dish.id} className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                    <div key={dish.id} className="border border-neutral-600 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                       {/* Dish Image */}
                       {dish.photos && dish.photos.length > 0 ? (
                         <div className="h-48 bg-gray-100 relative">
@@ -220,11 +272,11 @@ export default function DishesModal({ restaurant, isOpen, onClose }: DishesModal
                       {/* Dish Info */}
                       <div className="p-4">
                         <div className="flex items-start justify-between mb-2">
-                          <h3 className="font-semibold text-gray-900 text-lg">
+                          <h3 className="font-semibold text-white text-lg">
                             {dish.name}
                           </h3>
                           <div className="flex items-center gap-2">
-                            <span className="text-lg font-bold text-green-600">
+                            <span className="text-lg  font-bold text-green-600">
                               {new Intl.NumberFormat('es-PE', {
                                 style: 'currency',
                                 currency: 'PEN',
@@ -236,7 +288,7 @@ export default function DishesModal({ restaurant, isOpen, onClose }: DishesModal
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleEditDish(dish)}
-                                className="h-8 w-8 p-0"
+                                className="h-8 w-8 p-0 bg-neutral-800 border-1"
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
@@ -244,7 +296,7 @@ export default function DishesModal({ restaurant, isOpen, onClose }: DishesModal
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDeleteDish(dish)}
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                                className="h-8 w-8 p-0 bg-neutral-800 border-1  text-red-600 hover:text-red-700"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -259,7 +311,7 @@ export default function DishesModal({ restaurant, isOpen, onClose }: DishesModal
                         </div>
                         
                         {dish.description && (
-                          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                          <p className="text-gray-400 text-sm mb-3 line-clamp-2">
                             {dish.description}
                           </p>
                         )}
@@ -289,11 +341,11 @@ export default function DishesModal({ restaurant, isOpen, onClose }: DishesModal
         )}
         
         {isDishFormOpen && (
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto p-6" ref={formContainerRef}>
             <AdminDishForm
               restaurantId={restaurant.id!}
               dish={selectedDish || undefined}
-              categories={restaurant.categories}
+              categories={restaurant.categories || []}
               onSuccess={handleDishFormSuccess}
               onCancel={handleDishFormCancel}
             />
@@ -301,8 +353,8 @@ export default function DishesModal({ restaurant, isOpen, onClose }: DishesModal
         )}
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <div className="flex items-center justify-between text-sm text-gray-600">
+        <div className="p-4 border-t border-neutral-600 bg-neutral-800">
+          <div className="flex items-center justify-between text-sm text-gray-300">
             {!isDishFormOpen ? (
               <span>
                 {filteredDishes.length} {filteredDishes.length === 1 ? 'plato' : 'platos'} 

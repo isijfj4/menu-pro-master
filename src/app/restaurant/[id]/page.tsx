@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { Star, ArrowLeft } from 'lucide-react';
+import { Star, ArrowLeft, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Restaurant, Dish } from '@/lib/types';
 import { getRestaurant } from '@/lib/db/restaurants';
 import { getAllDishes } from '@/lib/db/dishes';
 import CategoryTabs from '@/components/CategoryTabs';
+import DishesModal from '@/components/DishesModal';
 import { RestaurantCardSkeleton } from '@/components/LoadingSkeleton';
 import toast from 'react-hot-toast';
 
@@ -20,6 +21,21 @@ export default function RestaurantPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDishesModalOpen, setIsDishesModalOpen] = useState(false);
+
+  // Function to fetch dishes data
+  const fetchDishes = useCallback(async () => {
+    if (!id) return;
+    
+    try {
+      const dishesData = await getAllDishes(id);
+      console.log('Fetched dishes:', dishesData);
+      setDishes(dishesData);
+    } catch (error) {
+      console.error('Error fetching dishes data:', error);
+      toast.error('Error al cargar los platos');
+    }
+  }, [id]);
 
   // Fetch restaurant and dishes data
   useEffect(() => {
@@ -34,11 +50,13 @@ export default function RestaurantPage() {
           return;
         }
         
+        console.log('Fetched restaurant:', restaurantData);
+        console.log('Restaurant categories:', restaurantData.categories);
+        
         setRestaurant(restaurantData);
         
         // Fetch dishes data
-        const dishesData = await getAllDishes(id);
-        setDishes(dishesData);
+        await fetchDishes();
       } catch (error) {
         console.error('Error fetching restaurant data:', error);
         toast.error('Error al cargar los datos del restaurante');
@@ -48,7 +66,7 @@ export default function RestaurantPage() {
     };
 
     fetchData();
-  }, [id]);
+  }, [id, fetchDishes]);
 
   // Handle dish click
   const handleDishClick = (dish: Dish) => {
@@ -57,14 +75,15 @@ export default function RestaurantPage() {
   };
 
   // Generate stars based on rating
-  const renderStars = (rating: number) => {
+  const renderStars = (rating: number | any) => {
+    const numericRating = typeof rating === 'number' ? rating : 0;
     return Array(5).fill(0).map((_, i) => (
       <Star
         key={i}
         className={`h-5 w-5 ${
-          i < Math.floor(rating) 
+          i < Math.floor(numericRating) 
             ? "text-yellow-500 fill-yellow-500" 
-            : i < rating 
+            : i < numericRating 
               ? "text-yellow-500 fill-yellow-500/50" 
               : "text-muted-foreground"
         }`}
@@ -95,15 +114,29 @@ export default function RestaurantPage() {
     );
   }
 
+  // Function to open dishes modal
+  const handleOpenDishesModal = () => {
+    if (restaurant) {
+      setIsDishesModalOpen(true);
+    }
+  };
+
+  // Function to close dishes modal
+  const handleCloseDishesModal = () => {
+    setIsDishesModalOpen(false);
+  };
+
   return (
     <div className="py-6">
-      <Link 
-        href="/"
-        className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors mb-6"
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Volver a la lista de restaurantes
-      </Link>
+      <div className="flex items-center justify-between mb-6">
+        <Link 
+          href="/"
+          className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Volver a la lista de restaurantes
+        </Link>
+      </div>
       
       {/* Restaurant hero section */}
       <div className="rounded-2xl overflow-hidden bg-card border shadow-lg mb-8">
@@ -135,7 +168,7 @@ export default function RestaurantPage() {
             <div className="flex items-center gap-1">
               {renderStars(restaurant.rating)}
               <span className="ml-2 text-muted-foreground">
-                ({restaurant.rating.toFixed(1)})
+                ({typeof restaurant.rating === 'number' ? restaurant.rating.toFixed(1) : '0.0'})
               </span>
             </div>
           </div>
@@ -144,13 +177,16 @@ export default function RestaurantPage() {
       
       {/* Dish categories and items */}
       {restaurant.categories && restaurant.categories.length > 0 ? (
-        <CategoryTabs
-          categories={restaurant.categories}
-          dishes={dishes}
-          restaurantId={id}
-          isLoading={isLoading}
-          onDishClick={handleDishClick}
-        />
+        <>
+          <CategoryTabs
+            categories={restaurant.categories}
+            dishes={dishes}
+            restaurantId={id}
+            isLoading={isLoading}
+            onDishClick={handleDishClick}
+            onDishesUpdated={fetchDishes}
+          />
+        </>
       ) : (
         <div className="text-center py-12">
           <p className="text-muted-foreground">Este restaurante aún no tiene categorías de platos.</p>
@@ -227,6 +263,16 @@ export default function RestaurantPage() {
             </div>
           </motion.div>
         </div>
+      )}
+      
+      {/* Dishes management modal */}
+      {isDishesModalOpen && restaurant && (
+        <DishesModal
+          restaurant={restaurant}
+          isOpen={isDishesModalOpen}
+          onClose={handleCloseDishesModal}
+          onDishesUpdated={fetchDishes}
+        />
       )}
     </div>
   );

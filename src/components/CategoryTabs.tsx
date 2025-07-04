@@ -12,6 +12,7 @@ interface CategoryTabsProps {
   restaurantId: string;
   isLoading: boolean;
   onDishClick: (dish: Dish) => void;
+  onDishesUpdated?: () => Promise<void>;
 }
 
 export default function CategoryTabs({
@@ -19,23 +20,48 @@ export default function CategoryTabs({
   dishes,
   restaurantId,
   isLoading,
-  onDishClick
+  onDishClick,
+  onDishesUpdated
 }: CategoryTabsProps) {
+  // Add "Todos" as a special category to show all dishes
+  const allCategories = ['Todos', ...categories];
+  
   const [activeCategory, setActiveCategory] = useState<string>(
-    categories.length > 0 ? categories[0] : ''
+    allCategories.length > 0 ? allCategories[0] : ''
   );
 
-  // Filter dishes by active category
-  const filteredDishes = dishes.filter(
-    (dish) => dish.category === activeCategory
-  );
+  // Filter dishes by active category (show all if "Todos" is selected)
+  const filteredDishes = activeCategory === 'Todos' 
+    ? dishes 
+    : dishes.filter((dish) => {
+        // Make comparison case-insensitive
+        return dish.category.toLowerCase() === activeCategory.toLowerCase();
+      });
+
+  // For debugging
+  console.log('All dishes:', dishes);
+  console.log('Active category:', activeCategory);
+  console.log('Filtered dishes:', filteredDishes);
+  console.log('All categories:', categories);
+  console.log('All categories with Todos:', allCategories);
+  
+  // Count dishes per category for debugging
+  const dishesPerCategory: Record<string, number> = {};
+  dishes.forEach(dish => {
+    const category = dish.category as string;
+    if (!dishesPerCategory[category]) {
+      dishesPerCategory[category] = 0;
+    }
+    dishesPerCategory[category]++;
+  });
+  console.log('Dishes per category:', dishesPerCategory);
 
   return (
     <div className="mt-8">
       {/* Category tabs */}
       <div className="border-b mb-6 overflow-x-auto">
         <div className="flex space-x-2 min-w-max">
-          {categories.map((category) => (
+          {allCategories.map((category) => (
             <button
               key={category}
               onClick={() => setActiveCategory(category)}

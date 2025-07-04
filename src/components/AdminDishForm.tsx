@@ -44,18 +44,26 @@ export default function AdminDishForm({
     dish?.photos || []
   );
 
-  // Combine default categories with custom categories from the restaurant
-  const allCategoryOptions = [
-    ...categoryOptions,
-    ...categories
-      .filter(cat => !categoryOptions.some(option => option.value === cat))
-      .map(cat => ({ value: cat as DishCategory, label: cat }))
-  ];
+// Only use categories from the restaurant
+const allCategoryOptions = categories.map(cat => {
+  console.log('Adding category:', cat);
+  return { value: cat as DishCategory, label: cat };
+});
 
+  console.log('Available categories:', categories);
+  console.log('All category options:', allCategoryOptions);
+
+  // Use the first category from the restaurant's categories or empty string if none exist
+  const defaultCategory = categories.length > 0 
+    ? categories[0] as DishCategory 
+    : '' as DishCategory;
+  
+  console.log('Default category:', defaultCategory);
+  
   const { register, handleSubmit, formState: { errors }, watch } = useForm<CreateDishData>({
     defaultValues: dish || {
       name: '',
-      category: categories.length > 0 ? categories[0] as DishCategory : 'Platos a la carta',
+      category: defaultCategory,
       price: 0,
       description: '',
       photos: [],
@@ -91,11 +99,17 @@ export default function AdminDishForm({
     try {
       setIsSubmitting(true);
       
+      console.log('Form data before submission:', data);
+      
       // Include allergens from state
       data.allergens = allergens;
       
       // Convert price from decimal to cents
       data.price = Math.round(Number(data.price) * 100);
+      
+      // Ensure category is one of the valid options
+      console.log('Selected category:', data.category);
+      console.log('Available categories in restaurant:', categories);
       
       // Process photos - separate blob URLs from real URLs
       const blobUrls = photos.filter(url => url.startsWith('blob:'));
@@ -159,205 +173,201 @@ export default function AdminDishForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="space-y-4">
-        {/* Dish name */}
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium mb-1">
-            Nombre del plato
-          </label>
-          <input
-            id="name"
-            type="text"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2"
-            placeholder="Nombre del plato"
-            {...register('name', { required: 'El nombre es obligatorio' })}
-          />
-          {errors.name && (
-            <p className="text-destructive text-sm mt-1">{errors.name.message}</p>
-          )}
-        </div>
-        
-        {/* Dish category */}
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium mb-1">
-            Categoría
-          </label>
-          <select
-            id="category"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2"
-            {...register('category', { required: 'La categoría es obligatoria' })}
-          >
-            {allCategoryOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          {errors.category && (
-            <p className="text-destructive text-sm mt-1">{errors.category.message}</p>
-          )}
-        </div>
-        
-        {/* Dish price */}
-        <div>
-          <label htmlFor="price" className="block text-sm font-medium mb-1">
-            Precio (PEN)
-          </label>
-          <input
-            id="price"
-            type="number"
-            step="0.01"
-            min="0"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2"
-            placeholder="0.00"
-            {...register('price', { 
-              required: 'El precio es obligatorio',
-              min: { value: 0, message: 'El precio debe ser mayor o igual a 0' }
-            })}
-          />
-          {errors.price && (
-            <p className="text-destructive text-sm mt-1">{errors.price.message}</p>
-          )}
-        </div>
-        
-        {/* Dish description */}
-        <div>
-          <label htmlFor="description" className="block text-sm font-medium mb-1">
-            Descripción
-          </label>
-          <textarea
-            id="description"
-            rows={3}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2"
-            placeholder="Descripción del plato"
-            {...register('description', { required: 'La descripción es obligatoria' })}
-          />
-          {errors.description && (
-            <p className="text-destructive text-sm mt-1">{errors.description.message}</p>
-          )}
-        </div>
-        
-        {/* Featured */}
-        <div className="flex items-center">
-          <input
-            id="isFeatured"
-            type="checkbox"
-            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-            {...register('isFeatured')}
-          />
-          <label htmlFor="isFeatured" className="ml-2 block text-sm">
-            Destacar este plato
-          </label>
-        </div>
-        
-        {/* Allergens */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Alérgenos (opcional)
-          </label>
-          <div className="flex flex-wrap gap-2 mb-2">
-            {allergens.map(allergen => (
-              <div 
-                key={allergen}
-                className="bg-muted rounded-full px-3 py-1 text-sm flex items-center gap-1"
-              >
-                <span>{allergen}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveAllergen(allergen)}
-                  className="text-muted-foreground hover:text-destructive"
-                  aria-label={`Eliminar alérgeno ${allergen}`}
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Left Column */}
+        <div className="space-y-4">
+          {/* Dish name */}
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium mb-1">
+              Nombre del plato
+            </label>
             <input
+              id="name"
               type="text"
-              className="flex-1 rounded-lg border border-input bg-background px-3 py-2"
-              placeholder="Nuevo alérgeno"
-              value={newAllergen}
-              onChange={e => setNewAllergen(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddAllergen();
-                }
-              }}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2"
+              placeholder="Nombre del plato"
+              {...register('name', { required: 'El nombre es obligatorio' })}
             />
-            <button
-              type="button"
-              onClick={handleAddAllergen}
-              className="bg-primary text-primary-foreground rounded-lg px-3 py-2"
-              aria-label="Añadir alérgeno"
+            {errors.name && (
+              <p className="text-destructive text-sm mt-1">{errors.name.message}</p>
+            )}
+          </div>
+          
+          {/* Dish category */}
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium mb-1">
+              Categoría
+            </label>
+            <select
+              id="category"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2"
+              {...register('category', { required: 'La categoría es obligatoria' })}
             >
-              <Plus className="h-4 w-4" />
-            </button>
+              {allCategoryOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {errors.category && (
+              <p className="text-destructive text-sm mt-1">{errors.category.message}</p>
+            )}
+          </div>
+          
+          {/* Dish price */}
+          <div>
+            <label htmlFor="price" className="block text-sm font-medium mb-1">
+              Precio (PEN)
+            </label>
+            <input
+              id="price"
+              type="number"
+              step="0.01"
+              min="0"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2"
+              placeholder="0.00"
+              {...register('price', { 
+                required: 'El precio es obligatorio',
+                min: { value: 0, message: 'El precio debe ser mayor o igual a 0' }
+              })}
+            />
+            {errors.price && (
+              <p className="text-destructive text-sm mt-1">{errors.price.message}</p>
+            )}
+          </div>
+          
+          {/* Dish description */}
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium mb-1">
+              Descripción
+            </label>
+            <textarea
+              id="description"
+              rows={3}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2"
+              placeholder="Descripción del plato"
+              {...register('description', { required: 'La descripción es obligatoria' })}
+            />
+            {errors.description && (
+              <p className="text-destructive text-sm mt-1">{errors.description.message}</p>
+            )}
+          </div>
+          
+          {/* Featured */}
+          <div className="flex items-center">
+            <input
+              id="isFeatured"
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              {...register('isFeatured')}
+            />
+            <label htmlFor="isFeatured" className="ml-2 block text-sm">
+              Destacar este plato
+            </label>
           </div>
         </div>
         
-        {/* Photos */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Fotos (máximo 5)
-          </label>
-          {photos.length < 5 && (
-            <ImageUploader
-              onImageUpload={handleImageUpload}
-              onImageRemove={() => {}}
-              aspectRatio="square"
-            />
-          )}
-          {photos.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-              {photos.map((photo, index) => (
-                <div key={index} className="relative rounded-lg overflow-hidden aspect-square">
-                  <Image
-                    src={photo}
-                    alt={`Foto ${index + 1}`}
-                    fill
-                    className="object-cover"
-                  />
+        {/* Right Column */}
+        <div className="space-y-4">
+          {/* Allergens */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Alérgenos (opcional)
+            </label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {allergens.map(allergen => (
+                <div 
+                  key={allergen}
+                  className="bg-muted rounded-full px-3 py-1 text-sm flex items-center gap-1"
+                >
+                  <span>{allergen}</span>
                   <button
                     type="button"
-                    onClick={() => handleRemoveImage(photo)}
-                    className="absolute top-1 right-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70 transition-colors"
-                    aria-label="Eliminar foto"
+                    onClick={() => handleRemoveAllergen(allergen)}
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label={`Eliminar alérgeno ${allergen}`}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3 w-3" />
                   </button>
                 </div>
               ))}
             </div>
-          )}
-          {photos.length >= 5 && (
-            <p className="text-muted-foreground text-sm mt-1">
-              Has alcanzado el límite de 5 fotos.
-            </p>
-          )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                className="flex-1 rounded-lg border border-input bg-background px-3 py-2"
+                placeholder="Nuevo alérgeno"
+                value={newAllergen}
+                onChange={e => setNewAllergen(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddAllergen();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleAddAllergen}
+                className="bg-primary text-primary-foreground rounded-lg px-3 py-2"
+                aria-label="Añadir alérgeno"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+          
+          {/* Photos */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Fotos (máximo 5)
+            </label>
+            {photos.length < 5 && (
+              <ImageUploader
+                onImageUpload={handleImageUpload}
+                onImageRemove={() => {}}
+                aspectRatio="square"
+              />
+            )}
+            {photos.length > 0 && (
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {photos.map((photo, index) => (
+                  <div key={index} className="relative rounded-lg overflow-hidden aspect-square">
+                    <Image
+                      src={photo}
+                      alt={`Foto ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(photo)}
+                      className="absolute top-1 right-1 rounded-full bg-black/50 p-1 text-white hover:bg-black/70 transition-colors"
+                      aria-label="Eliminar foto"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {photos.length >= 5 && (
+              <p className="text-muted-foreground text-sm mt-1">
+                Has alcanzado el límite de 5 fotos.
+              </p>
+            )}
+          </div>
         </div>
       </div>
       
-      {/* Form actions */}
-      <div className="flex justify-end gap-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 border border-input rounded-lg hover:bg-muted transition-colors"
-          disabled={isSubmitting}
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Guardando...' : dish ? 'Actualizar' : 'Crear'}
-        </button>
-      </div>
+      {/* Hidden submit button for form submission */}
+      <button
+        type="submit"
+        className="hidden"
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? 'Guardando...' : dish ? 'Actualizar' : 'Crear'}
+      </button>
     </form>
   );
 }

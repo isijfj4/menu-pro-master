@@ -26,14 +26,15 @@ export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCard
   const { id, name, type, rating, coverImg } = restaurant;
 
   // Generate stars based on rating
+  const numericRating = typeof rating === 'number' ? rating : 0;
   const stars = Array(5).fill(0).map((_, i) => (
     <Star
       key={i}
       className={cn(
         "h-4 w-4",
-        i < Math.floor(rating) 
+        i < Math.floor(numericRating) 
           ? "text-yellow-500 fill-yellow-500" 
-          : i < rating 
+          : i < numericRating 
             ? "text-yellow-500 fill-yellow-500/50" 
             : "text-muted-foreground"
       )}
@@ -72,7 +73,7 @@ export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCard
             <div className="flex items-center gap-1 mt-auto">
               {stars}
               <span className="text-sm text-muted-foreground ml-1">
-                ({rating.toFixed(1)})
+                ({typeof rating === 'number' ? rating.toFixed(1) : '0.0'})
               </span>
             </div>
           </div>
