@@ -8,6 +8,7 @@ import { getAllDishes, deleteDish } from '@/lib/db/dishes';
 import DataTable from '@/components/DataTable';
 import AdminRestaurantForm from '@/components/AdminRestaurantForm';
 import AdminDishForm from '@/components/AdminDishForm';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import toast from 'react-hot-toast';
 
 export default function AdminPage() {
@@ -182,83 +183,85 @@ export default function AdminPage() {
   ];
 
   return (
-    <div className="py-6">
-      <h1 className="text-3xl font-bold mb-6">Administración de Restaurantes</h1>
-      
-      {/* Restaurants Table */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Restaurantes</h2>
-        <DataTable
-          data={restaurants}
-          columns={restaurantColumns}
-          onAdd={handleAddRestaurant}
-          onEdit={handleEditRestaurant}
-          onDelete={handleDeleteRestaurant}
-          addButtonLabel="Añadir Restaurante"
-          isLoading={isLoading}
-        />
-      </div>
-      
-      {/* Dishes Table (only shown when a restaurant is selected) */}
-      {selectedRestaurant && (
-        <div className="mt-12">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">
-              Platos de {selectedRestaurant.name}
-            </h2>
-            <button
-              onClick={() => setSelectedRestaurant(null)}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Volver a todos los restaurantes
-            </button>
-          </div>
-          
+    <ProtectedRoute>
+      <div className="py-6">
+        <h1 className="text-3xl font-bold mb-6">Administración de Restaurantes</h1>
+        
+        {/* Restaurants Table */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Restaurantes</h2>
           <DataTable
-            data={dishes}
-            columns={dishColumns}
-            onAdd={handleAddDish}
-            onEdit={handleEditDish}
-            onDelete={handleDeleteDish}
-            addButtonLabel="Añadir Plato"
+            data={restaurants}
+            columns={restaurantColumns}
+            onAdd={handleAddRestaurant}
+            onEdit={handleEditRestaurant}
+            onDelete={handleDeleteRestaurant}
+            addButtonLabel="Añadir Restaurante"
             isLoading={isLoading}
           />
         </div>
-      )}
-      
-      {/* Restaurant Form Modal */}
-      {isRestaurantFormOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-2xl overflow-hidden max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <h2 className="text-xl font-bold mb-4">
-              {selectedRestaurant ? 'Editar Restaurante' : 'Nuevo Restaurante'}
-            </h2>
-            <AdminRestaurantForm
-              restaurant={selectedRestaurant || undefined}
-              onSuccess={handleRestaurantFormSuccess}
-              onCancel={() => setIsRestaurantFormOpen(false)}
+        
+        {/* Dishes Table (only shown when a restaurant is selected) */}
+        {selectedRestaurant && (
+          <div className="mt-12">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold">
+                Platos de {selectedRestaurant.name}
+              </h2>
+              <button
+                onClick={() => setSelectedRestaurant(null)}
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Volver a todos los restaurantes
+              </button>
+            </div>
+            
+            <DataTable
+              data={dishes}
+              columns={dishColumns}
+              onAdd={handleAddDish}
+              onEdit={handleEditDish}
+              onDelete={handleDeleteDish}
+              addButtonLabel="Añadir Plato"
+              isLoading={isLoading}
             />
           </div>
-        </div>
-      )}
-      
-      {/* Dish Form Modal */}
-      {isDishFormOpen && selectedRestaurant && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-2xl overflow-hidden max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <h2 className="text-xl font-bold mb-4">
-              {selectedDish ? 'Editar Plato' : 'Nuevo Plato'}
-            </h2>
-            <AdminDishForm
-              restaurantId={selectedRestaurant.id!}
-              dish={selectedDish || undefined}
-              categories={selectedRestaurant.categories}
-              onSuccess={handleDishFormSuccess}
-              onCancel={() => setIsDishFormOpen(false)}
-            />
+        )}
+        
+        {/* Restaurant Form Modal */}
+        {isRestaurantFormOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-card rounded-2xl overflow-hidden max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+              <h2 className="text-xl font-bold mb-4">
+                {selectedRestaurant ? 'Editar Restaurante' : 'Nuevo Restaurante'}
+              </h2>
+              <AdminRestaurantForm
+                restaurant={selectedRestaurant || undefined}
+                onSuccess={handleRestaurantFormSuccess}
+                onCancel={() => setIsRestaurantFormOpen(false)}
+              />
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+        
+        {/* Dish Form Modal */}
+        {isDishFormOpen && selectedRestaurant && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-card rounded-2xl overflow-hidden max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+              <h2 className="text-xl font-bold mb-4">
+                {selectedDish ? 'Editar Plato' : 'Nuevo Plato'}
+              </h2>
+              <AdminDishForm
+                restaurantId={selectedRestaurant.id!}
+                dish={selectedDish || undefined}
+                categories={selectedRestaurant.categories}
+                onSuccess={handleDishFormSuccess}
+                onCancel={() => setIsDishFormOpen(false)}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    </ProtectedRoute>
   );
 }

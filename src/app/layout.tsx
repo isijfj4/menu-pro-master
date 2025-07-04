@@ -5,6 +5,7 @@ import './globals.css';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import OfflineBanner from '@/components/OfflineBanner';
+import { AuthProvider } from '@/contexts/AuthContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,17 +22,19 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={inter.className}>
-        <div className="flex flex-col min-h-screen">
-          <OfflineBanner />
-          <Header />
-          <main className="flex-1">
-            <div className="mx-auto max-w-6xl p-4">
-              {children}
-            </div>
-          </main>
-          <Footer />
-        </div>
-        <Toaster position="bottom-right" />
+        <AuthProvider>
+          <div className="flex flex-col min-h-screen">
+            <OfflineBanner />
+            <Header />
+            <main className="flex-1">
+              <div className="mx-auto max-w-6xl p-4">
+                {children}
+              </div>
+            </main>
+            <Footer />
+          </div>
+          <Toaster position="bottom-right" />
+        </AuthProvider>
       </body>
     </html>
   );
