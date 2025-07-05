@@ -131,16 +131,26 @@ export const createRestaurant = async (data: CreateRestaurantData): Promise<stri
  * @param data Datos a actualizar
  */
 export const updateRestaurant = async (
-  id: string, 
+  id: string,
   data: UpdateRestaurantData
 ): Promise<void> => {
   try {
     const restaurantRef = doc(db, RESTAURANTS_COLLECTION, id);
+
+    // Remove undefined values to avoid Firestore errors
+    const filteredData: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        // @ts-ignore - dynamic keys
+        filteredData[key] = value;
+      }
+    }
+
     const updateData = {
-      ...data,
-      updatedAt: Timestamp.now()
+      ...filteredData,
+      updatedAt: Timestamp.now(),
     };
-    
+
     await updateDoc(restaurantRef, updateData);
   } catch (error) {
     console.error('Error al actualizar el restaurante:', error);
