@@ -279,6 +279,8 @@ export default function AdminRestaurantForm({
             onImageRemove={handleImageRemove}
             aspectRatio="video"
           />
+          {/* Hidden input to register cover image value */}
+          <input type="hidden" {...register('coverImg')} />
         </div>
       </div>
       
