@@ -7,6 +7,7 @@ import { getAllRestaurants, getRestaurantsByType } from '@/lib/db/restaurants';
 import FiltersBar from '@/components/FiltersBar';
 import RestaurantCard from '@/components/RestaurantCard';
 import { RestaurantGridSkeleton } from '@/components/LoadingSkeleton';
+import { useImageDiagnostics } from '@/lib/diagnostics';
 import toast from 'react-hot-toast';
 
 export default function HomePage() {
@@ -17,6 +18,9 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [hasMore, setHasMore] = useState(true);
   const router = useRouter();
+
+  // Ejecutar diagnósticos automáticos en desarrollo
+  useImageDiagnostics();
 
   // Fetch restaurants based on selected type
   useEffect(() => {

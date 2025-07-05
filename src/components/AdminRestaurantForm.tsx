@@ -66,10 +66,19 @@ export default function AdminRestaurantForm({
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
+    console.log('🖼️ [RESTAURANT_FORM] Manejando subida de imagen:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      timestamp: new Date().toISOString()
+    });
+
     // Always return a temporary URL for preview in the UI
     // The actual upload will happen during form submission
     const tempUrl = URL.createObjectURL(file);
     setValue('coverImg', tempUrl);
+    
+    console.log('✅ [RESTAURANT_FORM] URL temporal creada:', tempUrl);
     return tempUrl;
   };
 
@@ -78,11 +87,22 @@ export default function AdminRestaurantForm({
   };
 
   const onSubmit = async (data: CreateRestaurantData) => {
+    const startTime = Date.now();
+    console.log('📝 [RESTAURANT_FORM] Iniciando envío del formulario:', {
+      isUpdate: !!restaurant,
+      restaurantId: restaurant?.id,
+      hasImage: !!data.coverImg,
+      imageUrl: data.coverImg,
+      categoriesCount: categories.length,
+      timestamp: new Date().toISOString()
+    });
+
     try {
       setIsSubmitting(true);
       
       // Include categories from state
       data.categories = categories;
+      console.log('📋 [RESTAURANT_FORM] Categorías incluidas:', categories);
       
       // Handle blob URL for cover image before saving to database
       let finalData = { ...data };
@@ -90,43 +110,102 @@ export default function AdminRestaurantForm({
       
       // Check if we have a blob URL that needs to be processed
       if (data.coverImg && data.coverImg.startsWith('blob:')) {
-        // Store the blob for later upload, but don't include it in the data to save
-        const response = await fetch(data.coverImg);
-        const blob = await response.blob();
-        imageToUpload = new File([blob], 'cover.jpg', { type: 'image/jpeg' });
+        console.log('🔄 [RESTAURANT_FORM] Procesando imagen temporal:', data.coverImg);
         
-        // Remove the temporary URL from the data to be saved
-        finalData.coverImg = '';
+        try {
+          // Store the blob for later upload, but don't include it in the data to save
+          const response = await fetch(data.coverImg);
+          const blob = await response.blob();
+          imageToUpload = new File([blob], 'cover.jpg', { type: 'image/jpeg' });
+          
+          console.log('✅ [RESTAURANT_FORM] Imagen convertida a File:', {
+            fileName: imageToUpload.name,
+            fileSize: imageToUpload.size,
+            fileType: imageToUpload.type
+          });
+          
+          // Remove the temporary URL from the data to be saved
+          finalData.coverImg = '';
+        } catch (blobError) {
+          console.error('❌ [RESTAURANT_FORM] Error al procesar blob:', blobError);
+          throw new Error('Error al procesar la imagen');
+        }
+      } else if (data.coverImg) {
+        console.log('🔗 [RESTAURANT_FORM] Usando imagen existente:', data.coverImg);
+      } else {
+        console.log('📷 [RESTAURANT_FORM] No hay imagen para procesar');
       }
       
       if (restaurant) {
+        console.log('🔄 [RESTAURANT_FORM] Actualizando restaurante existente:', restaurant.id);
+        
         // For existing restaurant
         if (imageToUpload) {
-          // Upload the image first to get the real URL
-          const imageUrl = await uploadRestaurantCoverImage(restaurant.id!, imageToUpload);
-          finalData.coverImg = imageUrl;
+          console.log('⬆️ [RESTAURANT_FORM] Subiendo nueva imagen...');
+          try {
+            const imageUrl = await uploadRestaurantCoverImage(restaurant.id!, imageToUpload);
+            finalData.coverImg = imageUrl;
+            console.log('✅ [RESTAURANT_FORM] Imagen subida exitosamente:', imageUrl);
+          } catch (uploadError) {
+            console.error('❌ [RESTAURANT_FORM] Error al subir imagen:', uploadError);
+            throw uploadError;
+          }
         }
         
         // Update with all data including the real image URL if applicable
+        console.log('💾 [RESTAURANT_FORM] Guardando datos del restaurante...');
         await updateRestaurant(restaurant.id!, finalData);
+        console.log('✅ [RESTAURANT_FORM] Restaurante actualizado exitosamente');
         toast.success('Restaurante actualizado con éxito');
       } else {
+        console.log('🆕 [RESTAURANT_FORM] Creando nuevo restaurante...');
+        
         // For new restaurant
         // First create with all data except possibly the image
+        console.log('💾 [RESTAURANT_FORM] Creando restaurante en base de datos...');
         const restaurantId = await createRestaurant(finalData);
+        console.log('✅ [RESTAURANT_FORM] Restaurante creado con ID:', restaurantId);
         
         // If we have an image to upload, do it now and update the restaurant
         if (imageToUpload) {
-          const imageUrl = await uploadRestaurantCoverImage(restaurantId, imageToUpload);
-          await updateRestaurant(restaurantId, { coverImg: imageUrl });
+          console.log('⬆️ [RESTAURANT_FORM] Subiendo imagen para nuevo restaurante...');
+          try {
+            const imageUrl = await uploadRestaurantCoverImage(restaurantId, imageToUpload);
+            console.log('✅ [RESTAURANT_FORM] Imagen subida exitosamente:', imageUrl);
+            
+            console.log('🔄 [RESTAURANT_FORM] Actualizando restaurante con URL de imagen...');
+            await updateRestaurant(restaurantId, { coverImg: imageUrl });
+            console.log('✅ [RESTAURANT_FORM] Restaurante actualizado con imagen');
+          } catch (uploadError) {
+            console.error('❌ [RESTAURANT_FORM] Error al subir imagen para nuevo restaurante:', uploadError);
+            // No lanzamos el error aquí porque el restaurante ya fue creado
+            toast.error('Restaurante creado pero hubo un error al subir la imagen');
+          }
         }
         
         toast.success('Restaurante creado con éxito');
       }
       
+      const totalTime = Date.now() - startTime;
+      console.log('🎉 [RESTAURANT_FORM] Proceso completado exitosamente:', {
+        totalTimeMs: totalTime,
+        hadImage: !!imageToUpload,
+        isUpdate: !!restaurant
+      });
+      
       onSuccess();
     } catch (error) {
-      console.error('Error saving restaurant:', error);
+      const totalTime = Date.now() - startTime;
+      console.error('💥 [RESTAURANT_FORM] Error al guardar restaurante:', {
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        errorStack: error instanceof Error ? error.stack : undefined,
+        totalTimeMs: totalTime,
+        isUpdate: !!restaurant,
+        restaurantId: restaurant?.id,
+        hadImage: !!data.coverImg,
+        timestamp: new Date().toISOString()
+      });
+      
       toast.error('Error al guardar el restaurante');
     } finally {
       setIsSubmitting(false);
@@ -305,5 +384,3 @@ export default function AdminRestaurantForm({
     </form>
   );
 }
-
-

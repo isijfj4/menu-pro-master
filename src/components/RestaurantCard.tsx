@@ -25,6 +25,16 @@ interface RestaurantCardProps {
 export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCardProps) {
   const { id, name, type, rating, coverImg } = restaurant;
 
+  console.log('🏪 [RESTAURANT_CARD] Renderizando tarjeta de restaurante:', {
+    restaurantId: id,
+    restaurantName: name,
+    hasCoverImg: !!coverImg,
+    coverImgUrl: coverImg,
+    coverImgLength: coverImg?.length,
+    isValidUrl: coverImg ? (coverImg.startsWith('http') || coverImg.startsWith('blob:')) : false,
+    timestamp: new Date().toISOString()
+  });
+
   // Generate stars based on rating including partial values
   const numericRating = typeof rating === 'number' ? rating : 0;
   const stars = Array(5).fill(0).map((_, i) => {
@@ -58,6 +68,29 @@ export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCard
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                onLoad={() => {
+                  console.log('✅ [RESTAURANT_CARD] Imagen cargada exitosamente:', {
+                    restaurantId: id,
+                    restaurantName: name,
+                    imageUrl: coverImg,
+                    timestamp: new Date().toISOString()
+                  });
+                }}
+                onError={(error) => {
+                  console.error('❌ [RESTAURANT_CARD] Error al cargar imagen:', {
+                    restaurantId: id,
+                    restaurantName: name,
+                    imageUrl: coverImg,
+                    error: error,
+                    timestamp: new Date().toISOString()
+                  });
+                }}
+                onLoadStart={() => {
+                  console.log('🔄 [RESTAURANT_CARD] Iniciando carga de imagen:', {
+                    restaurantId: id,
+                    imageUrl: coverImg
+                  });
+                }}
               />
             ) : (
               <div className="absolute inset-0 bg-muted flex items-center justify-center">

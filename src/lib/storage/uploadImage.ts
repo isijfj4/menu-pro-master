@@ -48,12 +48,33 @@ const validateFile = (file: File): { valid: boolean; error?: string } => {
  * @returns URL de la imagen subida
  */
 export const uploadImage = async (file: File, path: string): Promise<string> => {
+  const startTime = Date.now();
+  console.log('🔄 [UPLOAD] Iniciando subida de imagen:', {
+    fileName: file.name,
+    fileSize: file.size,
+    fileType: file.type,
+    path: path,
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV
+  });
+
   try {
+    // Verificar configuración de Firebase Storage
+    if (!storage) {
+      console.error('❌ [UPLOAD] Firebase Storage no está inicializado');
+      throw new Error('Firebase Storage no está disponible');
+    }
+
+    console.log('✅ [UPLOAD] Firebase Storage inicializado correctamente');
+
     // Validar archivo
+    console.log('🔍 [UPLOAD] Validando archivo...');
     const validation = validateFile(file);
     if (!validation.valid) {
+      console.error('❌ [UPLOAD] Validación de archivo falló:', validation.error);
       throw new Error(validation.error);
     }
+    console.log('✅ [UPLOAD] Archivo validado correctamente');
 
     // Generar nombre único para el archivo
     const timestamp = Date.now();
@@ -61,18 +82,56 @@ export const uploadImage = async (file: File, path: string): Promise<string> => 
     const fileName = `${timestamp}.${fileExtension}`;
     const fullPath = `${path}/${fileName}`;
 
+    console.log('📁 [UPLOAD] Ruta de archivo generada:', {
+      fileName,
+      fullPath,
+      timestamp
+    });
+
     // Crear referencia al archivo en Storage
+    console.log('🔗 [UPLOAD] Creando referencia en Firebase Storage...');
     const fileRef = storageRef(storage, fullPath);
+    console.log('✅ [UPLOAD] Referencia creada:', fileRef.fullPath);
 
     // Subir archivo
+    console.log('⬆️ [UPLOAD] Iniciando subida a Firebase Storage...');
     const snapshot = await uploadBytes(fileRef, file);
+    console.log('✅ [UPLOAD] Archivo subido exitosamente:', {
+      bytesTransferred: snapshot.metadata.size,
+      contentType: snapshot.metadata.contentType,
+      fullPath: snapshot.metadata.fullPath,
+      timeToken: snapshot.metadata.timeCreated
+    });
 
     // Obtener URL de descarga
+    console.log('🔗 [UPLOAD] Obteniendo URL de descarga...');
     const downloadURL = await getDownloadURL(snapshot.ref);
+    
+    const uploadTime = Date.now() - startTime;
+    console.log('🎉 [UPLOAD] Subida completada exitosamente:', {
+      downloadURL,
+      uploadTimeMs: uploadTime,
+      fileSizeKB: Math.round(file.size / 1024),
+      uploadSpeedKBps: Math.round((file.size / 1024) / (uploadTime / 1000))
+    });
 
     return downloadURL;
   } catch (error) {
-    console.error('Error al subir imagen:', error);
+    const uploadTime = Date.now() - startTime;
+    console.error('💥 [UPLOAD] Error al subir imagen:', {
+      error: error instanceof Error ? error.message : 'Error desconocido',
+      errorStack: error instanceof Error ? error.stack : undefined,
+      fileName: file.name,
+      fileSize: file.size,
+      path: path,
+      uploadTimeMs: uploadTime,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+      storageConfig: {
+        bucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+      }
+    });
     throw error;
   }
 };
