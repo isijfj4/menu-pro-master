@@ -208,6 +208,7 @@ export default function RestaurantPage() {
                   alt={selectedDish.name}
                   fill
                   className="object-cover"
+                  unoptimized
                 />
               ) : (
                 <div className="absolute inset-0 bg-muted flex items-center justify-center">

@@ -1,13 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { X, Plus } from 'lucide-react';
 import Image from 'next/image';
 import { Dish, DishCategory, CreateDishData } from '@/lib/types';
 import { createDish, updateDish } from '@/lib/db/dishes';
-import { uploadDishImage } from '@/lib/storage/uploadImage';
-import ImageUploader from './ImageUploader';
 import toast from 'react-hot-toast';
 
 // Category options for the form
@@ -60,8 +58,11 @@ const allCategoryOptions = categories.map(cat => {
   
   console.log('Default category:', defaultCategory);
   
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<CreateDishData>({
-    defaultValues: dish || {
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<CreateDishData>({
+    defaultValues: dish ? {
+      ...dish,
+      price: dish.price / 100, // Convert cents to decimal for the form
+    } : {
       name: '',
       category: defaultCategory,
       price: 0,
@@ -71,6 +72,16 @@ const allCategoryOptions = categories.map(cat => {
       isFeatured: false
     }
   });
+
+  useEffect(() => {
+    // Register the 'photos' field so react-hook-form is aware of it
+    register('photos');
+  }, [register]);
+
+  useEffect(() => {
+    // Update the form value when the local 'photos' state changes
+    setValue('photos', photos);
+  }, [photos, setValue]);
 
   const handleAddAllergen = () => {
     if (newAllergen.trim() && !allergens.includes(newAllergen.trim())) {
@@ -83,12 +94,13 @@ const allCategoryOptions = categories.map(cat => {
     setAllergens(allergens.filter(a => a !== allergen));
   };
 
-  const handleImageUpload = async (file: File): Promise<string> => {
-    // Always return a temporary URL for preview in the UI
-    // The actual upload will happen during form submission
-    const tempUrl = URL.createObjectURL(file);
-    setPhotos([...photos, tempUrl]);
-    return tempUrl;
+  const [newPhotoUrl, setNewPhotoUrl] = useState('');
+
+  const handleAddPhoto = () => {
+    if (newPhotoUrl.trim() && photos.length < 5) {
+      setPhotos([...photos, newPhotoUrl.trim()]);
+      setNewPhotoUrl('');
+    }
   };
 
   const handleRemoveImage = (url: string) => {
@@ -111,54 +123,13 @@ const allCategoryOptions = categories.map(cat => {
       console.log('Selected category:', data.category);
       console.log('Available categories in restaurant:', categories);
       
-      // Process photos - separate blob URLs from real URLs
-      const blobUrls = photos.filter(url => url.startsWith('blob:'));
-      const realUrls = photos.filter(url => !url.startsWith('blob:'));
-      
-      // Prepare files to upload from blob URLs
-      const filesToUpload: File[] = [];
-      for (let i = 0; i < blobUrls.length; i++) {
-        const blobUrl = blobUrls[i];
-        const response = await fetch(blobUrl);
-        const blob = await response.blob();
-        filesToUpload.push(new File([blob], `photo-${i}.jpg`, { type: 'image/jpeg' }));
-      }
-      
-      // Create a copy of data with only real URLs for photos
-      const finalData = { ...data, photos: realUrls };
-      
+      const finalData = { ...data, allergens, photos };
+
       if (dish) {
-        // For existing dish
-        let updatedPhotos = [...realUrls];
-        
-        // Upload any new photos first to get real URLs
-        for (let i = 0; i < filesToUpload.length; i++) {
-          const imageUrl = await uploadDishImage(restaurantId, dish.id!, filesToUpload[i]);
-          updatedPhotos.push(imageUrl);
-        }
-        
-        // Update with all data including real image URLs
-        finalData.photos = updatedPhotos;
         await updateDish(restaurantId, dish.id!, finalData);
         toast.success('Plato actualizado con éxito');
       } else {
-        // For new dish - first create with real URLs only
-        const dishId = await createDish(restaurantId, finalData);
-        
-        // If we have files to upload, do it now
-        if (filesToUpload.length > 0) {
-          const newPhotos = [...realUrls];
-          
-          // Upload each file and collect real URLs
-          for (let i = 0; i < filesToUpload.length; i++) {
-            const imageUrl = await uploadDishImage(restaurantId, dishId, filesToUpload[i]);
-            newPhotos.push(imageUrl);
-          }
-          
-          // Update the dish with all real image URLs
-          await updateDish(restaurantId, dishId, { photos: newPhotos });
-        }
-        
+        await createDish(restaurantId, finalData);
         toast.success('Plato creado con éxito');
       }
       
@@ -320,15 +291,32 @@ const allCategoryOptions = categories.map(cat => {
           {/* Photos */}
           <div>
             <label className="block text-sm font-medium mb-1">
-              Fotos (máximo 5)
+              URLs de las fotos (máximo 5)
             </label>
-            {photos.length < 5 && (
-              <ImageUploader
-                onImageUpload={handleImageUpload}
-                onImageRemove={() => {}}
-                aspectRatio="square"
+            <div className="flex gap-2">
+              <input
+                type="url"
+                className="flex-1 rounded-lg border border-input bg-background px-3 py-2"
+                placeholder="https://ejemplo.com/foto.jpg"
+                value={newPhotoUrl}
+                onChange={e => setNewPhotoUrl(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddPhoto();
+                  }
+                }}
               />
-            )}
+              <button
+                type="button"
+                onClick={handleAddPhoto}
+                className="bg-primary text-primary-foreground rounded-lg px-3 py-2"
+                aria-label="Añadir foto"
+                disabled={photos.length >= 5}
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
             {photos.length > 0 && (
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {photos.map((photo, index) => (
@@ -338,6 +326,7 @@ const allCategoryOptions = categories.map(cat => {
                       alt={`Foto ${index + 1}`}
                       fill
                       className="object-cover"
+                      unoptimized
                     />
                     <button
                       type="button"
@@ -368,6 +357,9 @@ const allCategoryOptions = categories.map(cat => {
       >
         {isSubmitting ? 'Guardando...' : dish ? 'Actualizar' : 'Crear'}
       </button>
+      
+      {/* Hidden input to track photos with react-hook-form */}
+      <input type="hidden" {...register('photos')} />
     </form>
   );
 }

@@ -65,10 +65,10 @@ export default function LoginPage() {
   // Mostrar loading mientras se verifica la autenticación
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verificando autenticación...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto"></div>
+          <p className="mt-4 text-gray-300">Verificando autenticación...</p>
         </div>
       </div>
     );
@@ -80,16 +80,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-900 py-12 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 bg-neutral-500 rounded-full flex items-center justify-center">
             <LogIn className="h-6 w-6 text-white" />
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+          <h2 className="mt-6 text-3xl font-bold text-white">
             Iniciar Sesión
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-400">
             Accede a la administración de restaurantes
           </p>
         </div>
@@ -97,7 +97,7 @@ export default function LoginPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
                 Correo electrónico
               </label>
               <input
@@ -108,14 +108,14 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:z-10 sm:text-sm"
+                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-600 bg-gray-800 placeholder-gray-400 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:border-white focus:z-10 sm:text-sm"
                 placeholder="tu@email.com"
                 disabled={isLoading}
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
                 Contraseña
               </label>
               <div className="mt-1 relative">
@@ -127,7 +127,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 focus:z-10 sm:text-sm"
+                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-600 bg-gray-800 placeholder-gray-400 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:border-white focus:z-10 sm:text-sm"
                   placeholder="Tu contraseña"
                   disabled={isLoading}
                 />
@@ -138,9 +138,9 @@ export default function LoginPage() {
                   disabled={isLoading}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-200" />
                   ) : (
-                    <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    <Eye className="h-4 w-4 text-gray-400 hover:text-gray-200" />
                   )}
                 </button>
               </div>
@@ -151,7 +151,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-neutral-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-neutral-600 hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {isLoading ? (
                 <div className="flex items-center">
@@ -168,7 +168,7 @@ export default function LoginPage() {
           </div>
 
           <div className="text-center">
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-gray-400">
               Contacta al administrador si no tienes acceso
             </p>
           </div>

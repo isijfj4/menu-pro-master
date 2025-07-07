@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
 import './globals.css';
 import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import OfflineBanner from '@/components/OfflineBanner';
 import { AuthProvider } from '@/contexts/AuthContext';
 
@@ -31,7 +30,7 @@ export default function RootLayout({
                 {children}
               </div>
             </main>
-            <Footer />
+            
           </div>
           <Toaster position="bottom-right" />
         </AuthProvider>

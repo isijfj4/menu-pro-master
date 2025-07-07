@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { X, Star, Camera, Plus, Edit, Trash2, Save } from 'lucide-react';
+import Image from 'next/image';
 import { Restaurant, Dish } from '@/lib/types';
 import { getAllDishes, deleteDish } from '@/lib/db/dishes';
 import { Button } from '@/components/ui/button';
@@ -247,10 +248,12 @@ export default function DishesModal({ restaurant, isOpen, onClose, onDishesUpdat
                       {/* Dish Image */}
                       {dish.photos && dish.photos.length > 0 ? (
                         <div className="h-48 bg-gray-100 relative">
-                          <img
+                          <Image
                             src={dish.photos[0]}
                             alt={dish.name}
                             className="w-full h-full object-cover"
+                            layout="fill"
+                            unoptimized
                           />
                           {dish.isFeatured && (
                             <div className="absolute top-2 right-2 bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium">

@@ -3,10 +3,8 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { X, Plus } from 'lucide-react';
-import { Restaurant, RestaurantType, CreateRestaurantData } from '@/lib/types';
+import { Restaurant, RestaurantType, CreateRestaurantData, DishCategory } from '@/lib/types';
 import { createRestaurant, updateRestaurant } from '@/lib/db/restaurants';
-import { uploadRestaurantCoverImage } from '@/lib/storage/uploadImage';
-import ImageUploader from './ImageUploader';
 import toast from 'react-hot-toast';
 
 // Type options for the form
@@ -17,6 +15,15 @@ const typeOptions: { value: RestaurantType; label: string }[] = [
   { value: 'cevichería', label: 'Cevichería' },
   { value: 'pizzería', label: 'Pizzería' },
   { value: 'otro', label: 'Otro' }
+];
+
+const categoryOptions: DishCategory[] = [
+  'Entradas',
+  'Platos a la carta',
+  'Postres',
+  'Bebidas',
+  'Combos',
+  'Especialidades'
 ];
 
 interface AdminRestaurantFormProps {
@@ -34,7 +41,7 @@ export default function AdminRestaurantForm({
   const [categories, setCategories] = useState<string[]>(
     restaurant?.categories || []
   );
-  const [newCategory, setNewCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<DishCategory | ''>('');
 
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<CreateRestaurantData>({
     defaultValues: restaurant || {
@@ -54,9 +61,9 @@ export default function AdminRestaurantForm({
   const coverImg = watch('coverImg');
 
   const handleAddCategory = () => {
-    if (newCategory.trim() && !categories.includes(newCategory.trim())) {
-      setCategories([...categories, newCategory.trim()]);
-      setNewCategory('');
+    if (selectedCategory && !categories.includes(selectedCategory)) {
+      setCategories([...categories, selectedCategory]);
+      setSelectedCategory('');
     }
   };
 
@@ -64,62 +71,16 @@ export default function AdminRestaurantForm({
     setCategories(categories.filter(c => c !== category));
   };
 
-  const handleImageUpload = async (file: File): Promise<string> => {
-    // Always return a temporary URL for preview in the UI
-    // The actual upload will happen during form submission
-    const tempUrl = URL.createObjectURL(file);
-    setValue('coverImg', tempUrl);
-    return tempUrl;
-  };
-
-  const handleImageRemove = () => {
-    setValue('coverImg', '');
-  };
-
   const onSubmit = async (data: CreateRestaurantData) => {
     try {
       setIsSubmitting(true);
-      
-      // Include categories from state
       data.categories = categories;
-      
-      // Handle blob URL for cover image before saving to database
-      let finalData = { ...data };
-      let imageToUpload: File | null = null;
-      
-      // Check if we have a blob URL that needs to be processed
-      if (data.coverImg && data.coverImg.startsWith('blob:')) {
-        // Store the blob for later upload, but don't include it in the data to save
-        const response = await fetch(data.coverImg);
-        const blob = await response.blob();
-        imageToUpload = new File([blob], 'cover.jpg', { type: 'image/jpeg' });
-        
-        // Remove the temporary URL from the data to be saved
-        finalData.coverImg = '';
-      }
-      
+
       if (restaurant) {
-        // For existing restaurant
-        if (imageToUpload) {
-          // Upload the image first to get the real URL
-          const imageUrl = await uploadRestaurantCoverImage(restaurant.id!, imageToUpload);
-          finalData.coverImg = imageUrl;
-        }
-        
-        // Update with all data including the real image URL if applicable
-        await updateRestaurant(restaurant.id!, finalData);
+        await updateRestaurant(restaurant.id!, data);
         toast.success('Restaurante actualizado con éxito');
       } else {
-        // For new restaurant
-        // First create with all data except possibly the image
-        const restaurantId = await createRestaurant(finalData);
-        
-        // If we have an image to upload, do it now and update the restaurant
-        if (imageToUpload) {
-          const imageUrl = await uploadRestaurantCoverImage(restaurantId, imageToUpload);
-          await updateRestaurant(restaurantId, { coverImg: imageUrl });
-        }
-        
+        await createRestaurant(data);
         toast.success('Restaurante creado con éxito');
       }
       
@@ -197,24 +158,24 @@ export default function AdminRestaurantForm({
             ))}
           </div>
           <div className="flex gap-2">
-            <input
-              type="text"
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value as DishCategory)}
               className="flex-1 rounded-lg border border-input bg-background px-3 py-2"
-              placeholder="Nueva categoría"
-              value={newCategory}
-              onChange={e => setNewCategory(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleAddCategory();
-                }
-              }}
-            />
+            >
+              <option value="" disabled>Selecciona una categoría</option>
+              {categoryOptions.map(option => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
             <button
               type="button"
               onClick={handleAddCategory}
               className="bg-primary text-primary-foreground rounded-lg px-3 py-2"
               aria-label="Añadir categoría"
+              disabled={!selectedCategory}
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -266,17 +227,21 @@ export default function AdminRestaurantForm({
           )}
         </div>
         
-        {/* Cover image */}
+        {/* Cover image URL */}
         <div>
-          <label className="block text-sm font-medium mb-1">
-            Imagen de portada
+          <label htmlFor="coverImg" className="block text-sm font-medium mb-1">
+            URL de la imagen de portada
           </label>
-          <ImageUploader
-            onImageUpload={handleImageUpload}
-            currentImageUrl={coverImg || restaurant?.coverImg}
-            onImageRemove={handleImageRemove}
-            aspectRatio="video"
+          <input
+            id="coverImg"
+            type="url"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2"
+            placeholder="https://ejemplo.com/imagen.jpg"
+            {...register('coverImg', { required: 'La URL de la imagen es obligatoria' })}
           />
+          {errors.coverImg && (
+            <p className="text-destructive text-sm mt-1">{errors.coverImg.message}</p>
+          )}
         </div>
       </div>
       
