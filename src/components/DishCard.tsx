@@ -43,6 +43,7 @@ export default function DishCard({ dish, restaurantId, onClick, index = 0 }: Dis
               fill
               className="object-cover"
               sizes="(max-width: 768px) 50vw, 25vw"
+              unoptimized
             />
           ) : (
             <div className="absolute inset-0 bg-muted flex items-center justify-center">

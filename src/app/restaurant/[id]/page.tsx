@@ -150,6 +150,7 @@ export default function RestaurantPage() {
               fill
               className="object-cover"
               priority
+              unoptimized
             />
           ) : (
             <div className="absolute inset-0 bg-muted flex items-center justify-center">

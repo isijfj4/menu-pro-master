@@ -68,6 +68,7 @@ export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCard
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                unoptimized
                 onLoad={() => {
                   console.log('✅ [RESTAURANT_CARD] Imagen cargada exitosamente:', {
                     restaurantId: id,
