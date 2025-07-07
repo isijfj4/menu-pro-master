@@ -75,20 +75,22 @@ export default function RestaurantPage() {
   };
 
   // Generate stars based on rating
-  const renderStars = (rating: number | any) => {
+   const renderStars = (rating: number | any) => {
     const numericRating = typeof rating === 'number' ? rating : 0;
-    return Array(5).fill(0).map((_, i) => (
-      <Star
-        key={i}
-        className={`h-5 w-5 ${
-          i < Math.floor(numericRating) 
-            ? "text-yellow-500 fill-yellow-500" 
-            : i < numericRating 
-              ? "text-yellow-500 fill-yellow-500/50" 
-              : "text-muted-foreground"
-        }`}
-      />
-    ));
+    return Array(5).fill(0).map((_, i) => {
+      const fillPercent = Math.max(Math.min(numericRating - i, 1), 0) * 100;
+      return (
+        <span key={i} className="relative inline-block">
+          <Star className="h-5 w-5 text-muted-foreground" />
+          {fillPercent > 0 && (
+            <Star
+              className="h-5 w-5 text-yellow-500 fill-yellow-500 absolute left-0 top-0"
+              style={{ clipPath: `inset(0 ${100 - fillPercent}% 0 0)` }}
+            />
+          )}
+        </span>
+      );
+    });
   };
 
   if (isLoading) {

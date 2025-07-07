@@ -1,0 +1,30 @@
+rules_version = '2';
+
+// Craft rules based on data in your Firestore database
+// allow write: if firestore.get(
+//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin == true
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Función para verificar si el usuario es administrador
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    // Reglas para imágenes de restaurantes
+    match /restaurants/{restaurantId}/{allPaths=**} {
+      // Permitir lectura pública de todas las imágenes
+      allow read: if true;
+      
+      // Permitir escritura solo a administradores
+      allow write: if isAdmin();
+      
+      // Permitir eliminación solo a administradores
+      allow delete: if isAdmin();
+    }
+    
+    // Regla por defecto: denegar todo lo demás
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

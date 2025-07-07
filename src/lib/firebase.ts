@@ -29,11 +29,70 @@ class FirebaseService {
   private _auth: Auth;
 
   private constructor() {
-    // Inicializa Firebase solo si no hay instancias previas
-    this.app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-    this._firestore = getFirestore(this.app);
-    this._storage = getStorage(this.app);
-    this._auth = getAuth(this.app);
+    console.log('🔥 [FIREBASE] Inicializando Firebase Service...');
+    
+    // Verificar configuración
+    console.log('🔧 [FIREBASE] Verificando configuración:', {
+      hasApiKey: !!firebaseConfig.apiKey,
+      hasAuthDomain: !!firebaseConfig.authDomain,
+      hasProjectId: !!firebaseConfig.projectId,
+      hasStorageBucket: !!firebaseConfig.storageBucket,
+      hasMessagingSenderId: !!firebaseConfig.messagingSenderId,
+      hasAppId: !!firebaseConfig.appId,
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    });
+
+    // Verificar variables de entorno críticas
+    if (!firebaseConfig.projectId) {
+      console.error('❌ [FIREBASE] NEXT_PUBLIC_FIREBASE_PROJECT_ID no está configurado');
+    }
+    if (!firebaseConfig.storageBucket) {
+      console.error('❌ [FIREBASE] NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET no está configurado');
+    }
+    if (!firebaseConfig.apiKey) {
+      console.error('❌ [FIREBASE] NEXT_PUBLIC_FIREBASE_API_KEY no está configurado');
+    }
+
+    try {
+      // Inicializa Firebase solo si no hay instancias previas
+      const existingApps = getApps();
+      console.log('📱 [FIREBASE] Apps existentes:', existingApps.length);
+      
+      this.app = existingApps.length > 0 ? getApp() : initializeApp(firebaseConfig);
+      console.log('✅ [FIREBASE] App inicializada:', {
+        name: this.app.name,
+        projectId: this.app.options.projectId,
+        storageBucket: this.app.options.storageBucket
+      });
+
+      this._firestore = getFirestore(this.app);
+      console.log('✅ [FIREBASE] Firestore inicializado');
+
+      this._storage = getStorage(this.app);
+      console.log('✅ [FIREBASE] Storage inicializado:', {
+        bucket: this._storage.app.options.storageBucket,
+        maxOperationRetryTime: this._storage.maxOperationRetryTime,
+        maxUploadRetryTime: this._storage.maxUploadRetryTime
+      });
+
+      this._auth = getAuth(this.app);
+      console.log('✅ [FIREBASE] Auth inicializado');
+
+      console.log('🎉 [FIREBASE] Firebase Service inicializado correctamente');
+    } catch (error) {
+      console.error('💥 [FIREBASE] Error al inicializar Firebase:', {
+        error: error instanceof Error ? error.message : 'Error desconocido',
+        errorStack: error instanceof Error ? error.stack : undefined,
+        config: {
+          projectId: firebaseConfig.projectId,
+          storageBucket: firebaseConfig.storageBucket,
+          authDomain: firebaseConfig.authDomain
+        },
+        timestamp: new Date().toISOString()
+      });
+      throw error;
+    }
   }
 
   /**
