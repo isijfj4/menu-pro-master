@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import { Star, ArrowLeft, Plus } from 'lucide-react';
+import { Star, ArrowLeft, Plus, MapPin } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Restaurant, Dish } from '@/lib/types';
@@ -163,9 +163,15 @@ export default function RestaurantPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold">{restaurant.name}</h1>
-              <p className="text-muted-foreground mt-1">
-                {restaurant.location.city}
-              </p>
+              <a
+                href={restaurant.location.city}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-muted-foreground mt-1 hover:underline inline-flex items-center gap-1"
+              >
+                <MapPin className="h-4 w-4" />
+                <span className='text-amber-500'>Ver en Google Maps</span>
+              </a>
             </div>
             
             <div className="flex items-center gap-1">

@@ -212,14 +212,14 @@ export default function AdminRestaurantForm({
         {/* Location */}
         <div>
           <label htmlFor="city" className="block text-sm font-medium mb-1">
-            Ciudad
+            URL de Google Maps
           </label>
           <input
             id="city"
             type="text"
             className="w-full rounded-lg border border-input bg-background px-3 py-2"
-            placeholder="Ciudad"
-            {...register('location.city', { required: 'La ciudad es obligatoria' })}
+            placeholder="https://maps.app.goo.gl/..."
+            {...register('location.city', { required: 'La URL de Google Maps es obligatoria' })}
           />
           {errors.location?.city && (
             <p className="text-destructive text-sm mt-1">{errors.location.city.message}</p>
