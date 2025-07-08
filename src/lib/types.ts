@@ -5,7 +5,7 @@ import { Timestamp } from 'firebase/firestore';
  */
 
 // Tipos de restaurantes disponibles
-export type RestaurantType = 'pollería' | 'café' | 'chifa' | 'cevichería' | 'pizzería' | 'otro';
+export type RestaurantType = 'pollería' | 'café' | 'chifa' | 'cevichería'|'otro' | 'Nikei' | 'Criollo'| 'pizzería';
 
 // Categorías de platos
 export type DishCategory = 'Entradas' | 'Platos a la carta' | 'Postres' | 'Bebidas' | 'Combos' | 'Especialidades';

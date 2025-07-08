@@ -13,9 +13,11 @@ const typeOptions: { value: RestaurantType; label: string }[] = [
   { value: 'pollería', label: 'Pollería' },
   { value: 'café', label: 'Café' },
   { value: 'chifa', label: 'Chifa' },
+  { value: 'Nikei', label: 'Nikei' },
+  { value: 'Criollo', label: 'Criollo' },
   { value: 'cevichería', label: 'Cevichería' },
   { value: 'pizzería', label: 'Pizzería' },
-  { value: 'otro', label: 'Otro' }
+  { value: 'otro', label: 'Otro' },
 ];
 
 const categoryOptions: DishCategory[] = [
