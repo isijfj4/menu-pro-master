@@ -13,7 +13,7 @@ const typeOptions: { value: RestaurantType; label: string }[] = [
   { value: 'pollería', label: 'Pollería' },
   { value: 'café', label: 'Café' },
   { value: 'chifa', label: 'Chifa' },
-  { value: 'Nikei', label: 'Nikei' },
+  { value: 'Nikkei', label: 'Nikkei' },
   { value: 'Criollo', label: 'Criollo' },
   { value: 'cevichería', label: 'Cevichería' },
   { value: 'pizzería', label: 'Pizzería' },

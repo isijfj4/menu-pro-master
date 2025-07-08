@@ -14,7 +14,9 @@ const restaurantTypeLabels: Record<RestaurantType, string> = {
   'chifa': 'Chifa',
   'cevichería': 'Cevichería',
   'pizzería': 'Pizzería',
-  'otro': 'Otro'
+  'otro': 'Otro',
+  'Nikkei': 'Nikkei',
+  'Criollo': 'Criollo'
 };
 
 interface RestaurantCardProps {
