@@ -11,6 +11,7 @@ import { getRestaurant } from '@/lib/db/restaurants';
 import { getAllDishes } from '@/lib/db/dishes';
 import CategoryTabs from '@/components/CategoryTabs';
 import DishesModal from '@/components/DishesModal';
+import ImageGalleryModal from '@/components/ImageGalleryModal';
 import { RestaurantCardSkeleton } from '@/components/LoadingSkeleton';
 import toast from 'react-hot-toast';
 
@@ -22,6 +23,7 @@ export default function RestaurantPage() {
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDishesModalOpen, setIsDishesModalOpen] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
 
   // Function to fetch dishes data
   const fetchDishes = useCallback(async () => {
@@ -123,6 +125,12 @@ export default function RestaurantPage() {
     }
   };
 
+  const handleOpenGallery = () => {
+    if (restaurant && restaurant.images && restaurant.images.length > 0) {
+      setIsGalleryOpen(true);
+    }
+  };
+
   // Function to close dishes modal
   const handleCloseDishesModal = () => {
     setIsDishesModalOpen(false);
@@ -142,10 +150,10 @@ export default function RestaurantPage() {
       
       {/* Restaurant hero section */}
       <div className="rounded-2xl overflow-hidden bg-card border shadow-lg mb-8">
-        <div className="relative h-64 w-full">
-          {restaurant.coverImg ? (
+        <div className="relative h-64 w-full cursor-pointer" onClick={handleOpenGallery}>
+          {restaurant.images && restaurant.images.length > 0 ? (
             <Image
-              src={restaurant.coverImg}
+              src={restaurant.images[0]}
               alt={restaurant.name}
               fill
               className="object-cover"
@@ -282,6 +290,14 @@ export default function RestaurantPage() {
           isOpen={isDishesModalOpen}
           onClose={handleCloseDishesModal}
           onDishesUpdated={fetchDishes}
+        />
+      )}
+
+      {restaurant && restaurant.images && (
+        <ImageGalleryModal
+          images={restaurant.images}
+          isOpen={isGalleryOpen}
+          onClose={() => setIsGalleryOpen(false)}
         />
       )}
     </div>

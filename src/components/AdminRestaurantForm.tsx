@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useEffect } from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { X, Plus } from 'lucide-react';
 import { Restaurant, RestaurantType, CreateRestaurantData, DishCategory } from '@/lib/types';
 import { createRestaurant, updateRestaurant } from '@/lib/db/restaurants';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 
 // Type options for the form
 const typeOptions: { value: RestaurantType; label: string }[] = [
@@ -32,6 +33,9 @@ interface AdminRestaurantFormProps {
   onCancel: () => void;
 }
 
+interface RestaurantFormData extends Omit<CreateRestaurantData, 'images'> {
+  images: { value: string }[];
+}
 
 export default function AdminRestaurantForm({
   restaurant,
@@ -44,66 +48,72 @@ export default function AdminRestaurantForm({
   );
   const [selectedCategory, setSelectedCategory] = useState<DishCategory | ''>('');
 
-  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<CreateRestaurantData>({
-    defaultValues: restaurant || {
-      name: '',
-      type: 'otro',
-      categories: [],
-      coverImg: '',
-      location: {
-        lat: 0,
-        lng: 0,
-        city: 'Lima'
-      },
-      rating: 5
+  const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm<RestaurantFormData>({
+    defaultValues: {
+      name: restaurant?.name || '',
+      type: restaurant?.type || 'otro',
+      categories: restaurant?.categories || [],
+      coverImg: restaurant?.coverImg || '',
+      images: restaurant?.images ? restaurant.images.map(url => ({ value: url })) : [],
+      location: restaurant?.location || { lat: 0, lng: 0, city: 'Lima' },
+      rating: restaurant?.rating || 5,
     }
   });
 
-  const coverImg = watch('coverImg');
+  const { fields: images, append: appendImage, remove: removeImage } = useFieldArray({
+    control,
+    name: "images",
+  });
+
+  const watchedImages = watch('images');
+
+  useEffect(() => {
+    if (restaurant) {
+      setCategories(restaurant.categories);
+    }
+  }, [restaurant]);
 
   const handleAddCategory = () => {
     if (selectedCategory && !categories.includes(selectedCategory)) {
-      setCategories([...categories, selectedCategory]);
+      const newCategories = [...categories, selectedCategory];
+      setCategories(newCategories);
+      setValue('categories', newCategories);
       setSelectedCategory('');
     }
   };
 
   const handleRemoveCategory = (category: string) => {
-    setCategories(categories.filter(c => c !== category));
+    const newCategories = categories.filter(c => c !== category);
+    setCategories(newCategories);
+    setValue('categories', newCategories);
   };
 
-
-  const handleImageUpload = async (file: File): Promise<string> => {
-    console.log('🖼️ [RESTAURANT_FORM] Manejando subida de imagen:', {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      timestamp: new Date().toISOString()
-    });
-
-    // Always return a temporary URL for preview in the UI
-    // The actual upload will happen during form submission
-    const tempUrl = URL.createObjectURL(file);
-    setValue('coverImg', tempUrl);
-    
-    console.log('✅ [RESTAURANT_FORM] URL temporal creada:', tempUrl);
-    return tempUrl;
+  const handleAddImage = () => {
+    if (watchedImages.length < 15) {
+      appendImage({ value: '' });
+    } else {
+      toast.error('Puedes añadir un máximo de 15 imágenes.');
+    }
   };
 
-  const handleImageRemove = () => {
-    setValue('coverImg', '');
+  const handleImageRemove = (index: number) => {
+    removeImage(index);
   };
 
-  const onSubmit = async (data: CreateRestaurantData) => {
+  const onSubmit = async (data: RestaurantFormData) => {
     setIsSubmitting(true);
-    data.categories = categories;
+    
+    const formattedData: CreateRestaurantData = {
+      ...data,
+      images: data.images.map((img) => img.value),
+    };
 
     try {
       if (restaurant) {
-        await updateRestaurant(restaurant.id!, data);
+        await updateRestaurant(restaurant.id!, formattedData);
         toast.success('Restaurante actualizado con éxito');
       } else {
-        await createRestaurant(data);
+        await createRestaurant(formattedData);
         toast.success('Restaurante creado con éxito');
       }
       onSuccess();
@@ -249,22 +259,69 @@ export default function AdminRestaurantForm({
             <p className="text-destructive text-sm mt-1">{errors.rating.message}</p>
           )}
         </div>
-        
-        {/* Cover image URL */}
+
+        {/* Cover Image URL */}
         <div>
           <label htmlFor="coverImg" className="block text-sm font-medium mb-1">
-            URL de la imagen de portada
+            URL de la imagen de portada (para la tarjeta)
           </label>
           <input
             id="coverImg"
             type="text"
             className="w-full rounded-lg border border-input bg-background px-3 py-2"
-            placeholder="https://ejemplo.com/imagen.jpg"
-            {...register('coverImg', { required: 'La URL de la imagen es obligatoria' })}
+            placeholder="https://ejemplo.com/portada.jpg"
+            {...register('coverImg', { required: 'La URL de portada es obligatoria' })}
           />
-
           {errors.coverImg && (
             <p className="text-destructive text-sm mt-1">{errors.coverImg.message}</p>
+          )}
+        </div>
+        
+        {/* Image URLs */}
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <label className="block text-sm font-medium">
+              URLs de las imágenes (máx. 15)
+            </label>
+            <button
+              type="button"
+              onClick={handleAddImage}
+              className="bg-primary text-primary-foreground rounded-lg px-3 py-1 text-sm"
+              aria-label="Añadir URL de imagen"
+              disabled={watchedImages && watchedImages.length >= 15}
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="space-y-2">
+            {images.map((field, index) => (
+              <div key={field.id} className="flex items-center gap-2">
+                <input
+                  type="text"
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2"
+                  placeholder={`https://ejemplo.com/imagen${index + 1}.jpg`}
+                  {...register(`images.${index}.value`, { required: 'La URL no puede estar vacía' })}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleImageRemove(index)}
+                  className="text-muted-foreground hover:text-destructive"
+                  aria-label={`Eliminar URL ${index + 1}`}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+          {errors.images && (
+            <p className="text-destructive text-sm mt-1">
+              Asegúrate de que todas las URLs sean válidas.
+            </p>
+          )}
+          {watchedImages && watchedImages.length === 0 && (
+            <p className="text-destructive text-sm mt-1">
+              Debes añadir al menos una imagen.
+            </p>
           )}
         </div>
       </div>
@@ -282,7 +339,7 @@ export default function AdminRestaurantForm({
         <button
           type="submit"
           className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-          disabled={isSubmitting || categories.length === 0}
+          disabled={isSubmitting || categories.length === 0 || !watchedImages || watchedImages.length === 0}
         >
           {isSubmitting ? 'Guardando...' : restaurant ? 'Actualizar' : 'Crear'}
         </button>

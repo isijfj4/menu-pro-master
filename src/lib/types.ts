@@ -23,7 +23,8 @@ export interface Restaurant {
   name: string;          // Nombre del restaurante
   type: RestaurantType;  // Tipo de restaurante
   categories: string[];  // Categorías de platos que ofrece
-  coverImg: string;      // URL de imagen de portada en Firebase Storage
+  coverImg: string;      // URL de imagen de portada para la tarjeta
+  images: string[];      // URLs de imágenes para la galería (máximo 15)
   location: Location;    // Ubicación geográfica
   rating: number;        // Calificación (1-5)
   createdAt: Timestamp;  // Fecha de creación
