@@ -25,5 +25,17 @@ service cloud.firestore {
         allow delete: if isAuthenticated();
       }
     }
+
+    // Reglas para la colección de comentarios
+    match /comments/{commentId} {
+      // Permitir lectura pública
+      allow read: if true;
+      
+      // Permitir escritura a usuarios autenticados
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      
+      // No permitir actualizaciones ni eliminaciones por ahora
+      allow update, delete: if false;
+    }
   }
 }

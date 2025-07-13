@@ -14,6 +14,7 @@ import DishesModal from '@/components/DishesModal';
 import ImageGalleryModal from '@/components/ImageGalleryModal';
 import { RestaurantCardSkeleton } from '@/components/LoadingSkeleton';
 import toast from 'react-hot-toast';
+import CommentsList from '@/components/CommentsList';
 
 export default function RestaurantPage() {
   const { id } = useParams() as { id: string };
@@ -210,6 +211,8 @@ export default function RestaurantPage() {
           <p className="text-muted-foreground">Este restaurante aún no tiene categorías de platos.</p>
         </div>
       )}
+
+      <CommentsList restaurantId={id} />
       
       {/* Dish detail modal */}
       {selectedDish && isModalOpen && (

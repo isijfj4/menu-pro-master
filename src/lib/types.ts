@@ -32,6 +32,15 @@ export interface Restaurant {
   updatedAt: Timestamp;  // Fecha de última actualización
 }
 
+// Interfaz para comentarios
+export interface Comment {
+  id?: string;           // ID opcional
+  userId: string;        // ID del usuario que comenta
+  comment: string;       // Texto del comentario
+  rating: number;        // Calificación dada en el comentario (1-5)
+  createdAt: Timestamp;  // Fecha de creación del comentario
+}
+
 // Interfaz para platos
 export interface Dish {
   id?: string;                // ID opcional (se asigna automáticamente en creación)
