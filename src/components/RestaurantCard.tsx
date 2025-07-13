@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Star } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Restaurant, RestaurantType } from '@/lib/types';
-import { cn } from '@/lib/utils';
 
 // Map of restaurant types to their Spanish translations
 const restaurantTypeLabels: Record<RestaurantType, string> = {
@@ -25,7 +24,7 @@ interface RestaurantCardProps {
 }
 
 export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCardProps) {
-  const { id, name, type, rating, coverImg } = restaurant;
+  const { id, name, type, rating, coverImg, description } = restaurant;
 
   console.log('🏪 [RESTAURANT_CARD] Renderizando tarjeta de restaurante:', {
     restaurantId: id,
@@ -107,6 +106,7 @@ export default function RestaurantCard({ restaurant, index = 0 }: RestaurantCard
           
           <div className="p-4 flex-1 flex flex-col">
             <h3 className="text-lg font-semibold mb-1 line-clamp-1">{name}</h3>
+            <p className="text-sm text-muted-foreground mb-2 line-clamp-2">{description}</p>
             <div className="flex items-center gap-1 mt-auto">
               {stars}
               <span className="text-sm text-muted-foreground ml-1">

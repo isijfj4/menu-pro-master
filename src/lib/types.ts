@@ -21,6 +21,7 @@ export interface Location {
 export interface Restaurant {
   id?: string;           // ID opcional (se asigna automáticamente en creación)
   name: string;          // Nombre del restaurante
+  description: string;   // Descripción del restaurante
   type: RestaurantType;  // Tipo de restaurante
   categories: string[];  // Categorías de platos que ofrece
   coverImg: string;      // URL de imagen de portada para la tarjeta

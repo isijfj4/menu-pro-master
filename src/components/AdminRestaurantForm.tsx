@@ -53,6 +53,7 @@ export default function AdminRestaurantForm({
   const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm<RestaurantFormData>({
     defaultValues: {
       name: restaurant?.name || '',
+      description: restaurant?.description || '',
       type: restaurant?.type || 'otro',
       categories: restaurant?.categories || [],
       coverImg: restaurant?.coverImg || '',
@@ -144,6 +145,23 @@ export default function AdminRestaurantForm({
           />
           {errors.name && (
             <p className="text-destructive text-sm mt-1">{errors.name.message}</p>
+          )}
+        </div>
+
+        {/* Restaurant description */}
+        <div>
+          <label htmlFor="description" className="block text-sm font-medium mb-1">
+            Descripción del restaurante
+          </label>
+          <textarea
+            id="description"
+            rows={3}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2"
+            placeholder="Una breve descripción del restaurante"
+            {...register('description', { required: 'La descripción es obligatoria' })}
+          />
+          {errors.description && (
+            <p className="text-destructive text-sm mt-1">{errors.description.message}</p>
           )}
         </div>
         
