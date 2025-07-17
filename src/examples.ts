@@ -44,15 +44,20 @@ import {
 export const ejemploCrearRestaurante = async (): Promise<string> => {
   const nuevoRestaurante: CreateRestaurantData = {
     name: 'El Pollo Sabroso',
+    description: 'La mejor pollería de la ciudad, con el sabor tradicional que nos caracteriza.',
     type: 'pollería',
     categories: ['Entradas', 'Platos a la carta', 'Combos', 'Bebidas'],
-    coverImg: '', // Se actualizará después de subir la imagen
+    coverImg: 'https://firebasestorage.googleapis.com/v0/b/menu-pro-dev.appspot.com/o/covers%2Fpollo_sabroso.jpg?alt=media',
+    images: [
+      'https://firebasestorage.googleapis.com/v0/b/menu-pro-dev.appspot.com/o/gallery%2Fpollo_1.jpg?alt=media',
+      'https://firebasestorage.googleapis.com/v0/b/menu-pro-dev.appspot.com/o/gallery%2Fpollo_2.jpg?alt=media',
+    ],
     location: {
       lat: -12.046374,
       lng: -77.042793,
-      city: 'Lima'
+      city: 'Lima',
     },
-    rating: 4.5
+    rating: 4.5,
   };
 
   // Crear el restaurante en Firestore
@@ -175,9 +180,11 @@ export const ejemploCrearRestauranteConPlatos = async (): Promise<string> => {
   // Datos del restaurante
   const restauranteData: CreateRestaurantData = {
     name: 'Café Delicioso',
+    description: 'Un acogedor café para disfrutar de buenos momentos.',
     type: 'café',
     categories: ['Desayunos', 'Postres', 'Bebidas'],
     coverImg: 'https://ejemplo.com/imagen-temporal.jpg', // URL temporal
+    images: ['https://ejemplo.com/gallery1.jpg', 'https://ejemplo.com/gallery2.jpg'],
     location: {
       lat: -12.111111,
       lng: -77.222222,
